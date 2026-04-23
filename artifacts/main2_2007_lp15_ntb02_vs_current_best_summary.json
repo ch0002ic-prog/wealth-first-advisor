@@ -1,0 +1,13 @@
+{
+  "shared_rows": 0,
+  "mean_policy_total_return_diff": NaN,
+  "chrono_mean_policy_total_return_diff": null,
+  "regime_mean_policy_total_return_diff": null,
+  "test_mean_policy_total_return_diff": NaN,
+  "validation_mean_policy_total_return_diff": NaN,
+  "main2_win_rows": 0,
+  "current_win_rows": 0,
+  "ties": 0,
+  "largest_main2_wins": [],
+  "largest_main2_losses": []
+}

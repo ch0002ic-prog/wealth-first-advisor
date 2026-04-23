@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Wealth First Bridge Board</title>
+    <link rel="stylesheet" href="/dashboard.css">
+  </head>
+  <body>
+    <div class="orb orb--amber" aria-hidden="true"></div>
+    <div class="orb orb--teal" aria-hidden="true"></div>
+    <header class="hero shell">
+      <div class="hero__copy">
+        <p class="eyebrow">Local bridge console</p>
+        <h1>Wealth First Bridge Board</h1>
+        <p class="hero__lede">
+          Live intake, normalization, and execution monitoring for the TradingView bridge running on localhost.
+        </p>
+      </div>
+      <div class="hero__meta">
+        <button id="refreshButton" class="button button--primary" type="button">Refresh now</button>
+        <div class="hero__status">
+          <span id="workerPill" class="status-pill status-pill--idle">waiting</span>
+          <span id="lastUpdatedLabel" class="muted">Waiting for first snapshot</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="shell layout">
+      <section class="panel panel--summary reveal">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Heartbeat</p>
+            <h2>Bridge state</h2>
+          </div>
+          <p id="pollingLabel" class="muted">Polling every 2.5 seconds</p>
+        </div>
+        <div class="summary-grid">
+          <article class="metric-card accent-amber">
+            <p class="metric-card__label">Accepted events</p>
+            <p id="eventsCount" class="metric-card__value">0</p>
+          </article>
+          <article class="metric-card accent-teal">
+            <p class="metric-card__label">Executions</p>
+            <p id="executionsCount" class="metric-card__value">0</p>
+          </article>
+          <article class="metric-card accent-coral">
+            <p class="metric-card__label">Failures</p>
+            <p id="failuresCount" class="metric-card__value">0</p>
+          </article>
+          <article class="metric-card accent-ink">
+            <p class="metric-card__label">Return rows</p>
+            <p id="returnsCount" class="metric-card__value">0</p>
+          </article>
+        </div>
+        <dl class="path-list">
+          <div>
+            <dt>Event log</dt>
+            <dd id="eventLogPath">-</dd>
+          </div>
+          <div>
+            <dt>Returns CSV</dt>
+            <dd id="returnsPath">-</dd>
+          </div>
+          <div>
+            <dt>Execution log</dt>
+            <dd id="executionPath">-</dd>
+          </div>
+          <div>
+            <dt>Failure log</dt>
+            <dd id="failurePath">-</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="panel panel--composer reveal">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Test intake</p>
+            <h2>Send a webhook</h2>
+          </div>
+          <p id="tokenHint" class="muted">Token not yet loaded</p>
+        </div>
+        <form id="webhookForm" class="composer" novalidate>
+          <label class="field">
+            <span>Webhook token</span>
+            <input id="tokenInput" name="token" type="text" placeholder="Optional unless the bridge requires one">
+          </label>
+          <label class="field field--textarea">
+            <span>JSON payload</span>
+            <textarea id="payloadInput" name="payload" spellcheck="false"></textarea>
+          </label>
+          <div class="composer__actions">
+            <button id="submitButton" class="button button--secondary" type="submit">POST /webhook</button>
+            <span id="submitStatus" class="muted">Ready</span>
+          </div>
+        </form>
+        <pre id="submitResponse" class="response-box">No request sent yet.</pre>
+      </section>
+
+      <section class="panel panel--stream reveal">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Live stream</p>
+            <h2>Recent events</h2>
+          </div>
+        </div>
+        <div id="eventsStream" class="stream-list empty-state">No events yet.</div>
+      </section>
+
+      <section class="panel reveal">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Execution handoff</p>
+            <h2>Recent executions</h2>
+          </div>
+        </div>
+        <div id="executionsStream" class="stream-list empty-state">No execution records yet.</div>
+      </section>
+
+      <section class="panel reveal">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Worker failures</p>
+            <h2>Failure rail</h2>
+          </div>
+        </div>
+        <div id="failuresStream" class="stream-list empty-state">No failures recorded.</div>
+      </section>
+
+      <section class="panel panel--wide reveal">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Normalized data</p>
+            <h2>Returns preview</h2>
+          </div>
+          <p class="muted">Latest rows from the bridge output CSV</p>
+        </div>
+        <div class="table-shell">
+          <table id="returnsTable">
+            <thead>
+              <tr id="returnsHead"></tr>
+            </thead>
+            <tbody id="returnsBody">
+              <tr>
+                <td class="empty-state" colspan="1">No normalized return rows yet.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="/dashboard.js" defer></script>
+  </body>
+</html>

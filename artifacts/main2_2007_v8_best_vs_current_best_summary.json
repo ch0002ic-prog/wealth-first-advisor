@@ -1,0 +1,191 @@
+{
+  "shared_rows": 36,
+  "mean_policy_total_return_diff": 0.009364302535282124,
+  "chrono_mean_policy_total_return_diff": 0.01711933225266275,
+  "regime_mean_policy_total_return_diff": 0.0016092728179015027,
+  "test_mean_policy_total_return_diff": 0.002020920530987073,
+  "validation_mean_policy_total_return_diff": 0.016707684539577175,
+  "main2_win_rows": 23,
+  "current_win_rows": 13,
+  "ties": 0,
+  "largest_main2_wins": [
+    {
+      "split": "chrono",
+      "seed": 27,
+      "fold": "fold_03",
+      "phase": "test",
+      "phase_start": "2024-06-10 00:00:00",
+      "phase_end": "2026-04-17 00:00:00",
+      "policy_total_return_current": 0.273838,
+      "policy_total_return_main2": 0.3503111149471778,
+      "policy_total_return_diff": 0.07647311494717779
+    },
+    {
+      "split": "chrono",
+      "seed": 7,
+      "fold": "fold_01",
+      "phase": "validation",
+      "phase_start": "2017-12-18 00:00:00",
+      "phase_end": "2020-09-25 00:00:00",
+      "policy_total_return_current": 0.277035,
+      "policy_total_return_main2": 0.34766408132778404,
+      "policy_total_return_diff": 0.07062908132778406
+    },
+    {
+      "split": "chrono",
+      "seed": 7,
+      "fold": "fold_03",
+      "phase": "validation",
+      "phase_start": "2021-08-30 00:00:00",
+      "phase_end": "2024-06-07 00:00:00",
+      "policy_total_return_current": 0.201976,
+      "policy_total_return_main2": 0.2323593692539785,
+      "policy_total_return_diff": 0.0303833692539785
+    },
+    {
+      "split": "chrono",
+      "seed": 27,
+      "fold": "fold_01",
+      "phase": "validation",
+      "phase_start": "2017-12-18 00:00:00",
+      "phase_end": "2020-09-25 00:00:00",
+      "policy_total_return_current": 0.280346,
+      "policy_total_return_main2": 0.309208987695196,
+      "policy_total_return_diff": 0.02886298769519602
+    },
+    {
+      "split": "regime",
+      "seed": 7,
+      "fold": "fold_01",
+      "phase": "validation",
+      "phase_start": "2019-01-03 00:00:00",
+      "phase_end": "2022-04-22 00:00:00",
+      "policy_total_return_current": 0.696492,
+      "policy_total_return_main2": 0.7224371357166817,
+      "policy_total_return_diff": 0.025945135716681667
+    },
+    {
+      "split": "chrono",
+      "seed": 17,
+      "fold": "fold_03",
+      "phase": "validation",
+      "phase_start": "2021-08-30 00:00:00",
+      "phase_end": "2024-06-07 00:00:00",
+      "policy_total_return_current": 0.211816,
+      "policy_total_return_main2": 0.2360319406429947,
+      "policy_total_return_diff": 0.024215940642994704
+    },
+    {
+      "split": "chrono",
+      "seed": 17,
+      "fold": "fold_01",
+      "phase": "test",
+      "phase_start": "2020-09-28 00:00:00",
+      "phase_end": "2022-08-02 00:00:00",
+      "policy_total_return_current": 0.214807,
+      "policy_total_return_main2": 0.23721489937529538,
+      "policy_total_return_diff": 0.022407899375295387
+    },
+    {
+      "split": "regime",
+      "seed": 27,
+      "fold": "fold_03",
+      "phase": "validation",
+      "phase_start": "2021-08-25 00:00:00",
+      "phase_end": "2024-12-16 00:00:00",
+      "policy_total_return_current": 0.365819,
+      "policy_total_return_main2": 0.3876057000082662,
+      "policy_total_return_diff": 0.021786700008266213
+    }
+  ],
+  "largest_main2_losses": [
+    {
+      "split": "chrono",
+      "seed": 17,
+      "fold": "fold_02",
+      "phase": "test",
+      "phase_start": "2022-08-03 00:00:00",
+      "phase_end": "2024-06-07 00:00:00",
+      "policy_total_return_current": 0.31354,
+      "policy_total_return_main2": 0.2838092637162031,
+      "policy_total_return_diff": -0.02973073628379691
+    },
+    {
+      "split": "regime",
+      "seed": 27,
+      "fold": "fold_01",
+      "phase": "validation",
+      "phase_start": "2019-01-03 00:00:00",
+      "phase_end": "2022-04-22 00:00:00",
+      "policy_total_return_current": 0.697868,
+      "policy_total_return_main2": 0.6707900884612175,
+      "policy_total_return_diff": -0.027077911538782584
+    },
+    {
+      "split": "regime",
+      "seed": 7,
+      "fold": "fold_03",
+      "phase": "test",
+      "phase_start": "2024-12-17 00:00:00",
+      "phase_end": "2026-04-17 00:00:00",
+      "policy_total_return_current": 0.174657,
+      "policy_total_return_main2": 0.149408846235344,
+      "policy_total_return_diff": -0.025248153764656
+    },
+    {
+      "split": "chrono",
+      "seed": 27,
+      "fold": "fold_01",
+      "phase": "test",
+      "phase_start": "2020-09-28 00:00:00",
+      "phase_end": "2022-08-02 00:00:00",
+      "policy_total_return_current": 0.239845,
+      "policy_total_return_main2": 0.22140451340027512,
+      "policy_total_return_diff": -0.018440486599724887
+    },
+    {
+      "split": "regime",
+      "seed": 27,
+      "fold": "fold_01",
+      "phase": "test",
+      "phase_start": "2022-04-25 00:00:00",
+      "phase_end": "2023-08-21 00:00:00",
+      "policy_total_return_current": 0.031413,
+      "policy_total_return_main2": 0.01763337915781249,
+      "policy_total_return_diff": -0.013779620842187514
+    },
+    {
+      "split": "regime",
+      "seed": 7,
+      "fold": "fold_02",
+      "phase": "test",
+      "phase_start": "2023-08-22 00:00:00",
+      "phase_end": "2024-12-16 00:00:00",
+      "policy_total_return_current": 0.351008,
+      "policy_total_return_main2": 0.33957293068816874,
+      "policy_total_return_diff": -0.011435069311831247
+    },
+    {
+      "split": "regime",
+      "seed": 7,
+      "fold": "fold_01",
+      "phase": "test",
+      "phase_start": "2022-04-25 00:00:00",
+      "phase_end": "2023-08-21 00:00:00",
+      "policy_total_return_current": 0.02979,
+      "policy_total_return_main2": 0.018866888673879645,
+      "policy_total_return_diff": -0.010923111326120356
+    },
+    {
+      "split": "regime",
+      "seed": 17,
+      "fold": "fold_03",
+      "phase": "validation",
+      "phase_start": "2021-08-25 00:00:00",
+      "phase_end": "2024-12-16 00:00:00",
+      "policy_total_return_current": 0.371594,
+      "policy_total_return_main2": 0.3617061291905379,
+      "policy_total_return_diff": -0.009887870809462074
+    }
+  ]
+}

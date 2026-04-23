@@ -1,0 +1,76 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+//@version=6
+//@strategy_alert_message {{strategy.order.alert_message}}
+strategy("Wealth-First TV Bridge Example", overlay = true, pyramiding = 0)
+
+string strategyName = input.string("LIVE_PROBE", "Strategy label")
+string sleeveName = input.string("LIVE_PROBE", "Sleeve / truth-series column")
+float riskOnWeight = input.float(0.40, "Risk-on target weight", minval = 0.0, maxval = 1.0, step = 0.05)
+int fastLength = input.int(20, "Fast SMA length", minval = 1)
+int slowLength = input.int(50, "Slow SMA length", minval = 2)
+bool enableForceTestOrder = input.bool(false, "Enable force test order")
+string forceTestSide = input.string("long", "Force test side", options = ["long", "flat"])
+string forceTestNonce = input.string("", "Force test nonce")
+
+float fastMa = ta.sma(close, fastLength)
+float slowMa = ta.sma(close, slowLength)
+
+isoTimestamp() =>
+    str.format_time(timenow, "yyyy-MM-dd'T'HH:mm:ss'Z'", "UTC")
+
+buildTargetWeights(float symbolWeight) =>
+    '{"' + syminfo.ticker + '":' + str.tostring(symbolWeight, "#.####") + ',"CASH":' + str.tostring(1.0 - symbolWeight, "#.####") + '}'
+
+buildRebalanceMessage(string orderId, float symbolWeight, string side) =>
+    string eventId = sleeveName + "-" + syminfo.ticker + "-" + orderId + "-" + str.tostring(timenow)
+    string message = "{"
+    message := message + '"timestamp":"' + isoTimestamp() + '",'
+    message := message + '"event_id":"' + eventId + '",'
+    message := message + '"order_id":"' + orderId + '",'
+    message := message + '"event_type":"rebalance",'
+    message := message + '"strategy":"' + strategyName + '",'
+    message := message + '"sleeve":"' + sleeveName + '",'
+    message := message + '"ticker":"' + syminfo.ticker + '",'
+    message := message + '"side":"' + side + '",'
+    message := message + '"netprofit":' + str.tostring(strategy.netprofit, "#.##") + ','
+    message := message + '"equity":' + str.tostring(strategy.equity, "#.##") + ','
+    message := message + '"target_weights":' + buildTargetWeights(symbolWeight)
+    message := message + "}"
+    message
+
+bool naturalLongSignal = ta.crossover(fastMa, slowMa)
+bool naturalFlatSignal = ta.crossunder(fastMa, slowMa)
+var string lastForceTestNonce = ""
+bool forceTestArmed = enableForceTestOrder and str.length(forceTestNonce) > 0 and forceTestNonce != lastForceTestNonce and barstate.islast
+bool forceLongSignal = forceTestArmed and forceTestSide == "long"
+bool forceFlatSignal = forceTestArmed and forceTestSide == "flat"
+bool longSignal = naturalLongSignal or forceLongSignal
+bool flatSignal = naturalFlatSignal or forceFlatSignal
+float targetUnits = close > 0 ? (strategy.equity * riskOnWeight) / close : 0.0
+string enterOrderId = forceLongSignal ? "WF_FORCE_ENTER_LONG" : "WF_ENTER_LONG"
+string exitOrderId = forceFlatSignal ? "WF_FORCE_EXIT_LONG" : "WF_EXIT_LONG"
+
+// Create the alert from order fill events and leave the dialog message at its default value.
+if longSignal and strategy.position_size <= 0 and targetUnits > 0
+    strategy.order(
+        enterOrderId,
+        strategy.long,
+        qty = targetUnits,
+        alert_message = buildRebalanceMessage(enterOrderId, riskOnWeight, "long")
+    )
+    if forceLongSignal
+        lastForceTestNonce := forceTestNonce
+
+if flatSignal and strategy.position_size > 0
+    strategy.order(
+        exitOrderId,
+        strategy.short,
+        qty = math.abs(strategy.position_size),
+        alert_message = buildRebalanceMessage(exitOrderId, 0.0, "flat")
+    )
+    if forceFlatSignal
+        lastForceTestNonce := forceTestNonce
+
+plot(fastMa, "Fast SMA", color.aqua)
+plot(slowMa, "Slow SMA", color.orange)
+bgcolor(strategy.position_size > 0 ? color.new(color.green, 90) : na, title = "In-position highlight")
