@@ -10,6 +10,7 @@ frontend/.vite/
 frontend/.env.local
 frontend/.env.*.local
 .vercel/
+render.env
 artifacts/debug_*/
 artifacts/*smoke*
 artifacts/main2_live_*
