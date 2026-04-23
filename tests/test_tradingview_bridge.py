@@ -14,7 +14,14 @@ from pathlib import Path
 import pandas as pd
 from fastapi.testclient import TestClient
 
-from wealth_first.tradingview_bridge import BridgeSettings, create_app, normalize_event_log_to_returns, normalize_tradingview_payload
+from wealth_first.tradingview_bridge import (
+    BridgeSettings,
+    create_app,
+    load_bridge_bind_from_env,
+    load_bridge_settings_from_env,
+    normalize_event_log_to_returns,
+    normalize_tradingview_payload,
+)
 
 
 def _wait_for(predicate, timeout: float = 2.0, interval: float = 0.05) -> bool:
@@ -57,6 +64,55 @@ class _ProbeServer:
 
 
 class TradingViewBridgeTests(unittest.TestCase):
+    def test_load_bridge_settings_from_env_supports_deployment_overrides(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            settings = load_bridge_settings_from_env(
+                {
+                    "WEALTH_FIRST_EVENT_LOG_PATH": str(root / "runtime" / "events.jsonl"),
+                    "WEALTH_FIRST_OUTPUT_CSV_PATH": str(root / "runtime" / "returns.csv"),
+                    "WEALTH_FIRST_EXECUTION_LOG_PATH": str(root / "runtime" / "execution.jsonl"),
+                    "WEALTH_FIRST_FAILURE_LOG_PATH": str(root / "runtime" / "failures.jsonl"),
+                    "WEALTH_FIRST_ARTIFACT_ROOT_PATH": str(root / "runtime" / "artifacts"),
+                    "WEALTH_FIRST_MAIN2_RETURNS_CSV_PATH": str(root / "data" / "demo.csv"),
+                    "WEALTH_FIRST_MAIN2_COMPARE_DETAIL_CSV_PATH": str(root / "runtime" / "artifacts" / "baseline_detail.csv"),
+                    "WEALTH_FIRST_ALLOWED_ORIGINS": "https://wealth-first-advisor.vercel.app, https://preview.example.com ",
+                    "WEALTH_FIRST_ALLOWED_ORIGIN_REGEX": r"https://wealth-first-advisor-.*\.vercel\.app",
+                    "WEALTH_FIRST_NORMALIZE_ON_INGEST": "false",
+                    "WEALTH_FIRST_EXECUTION_PROBE_ON_STARTUP": "no",
+                    "WEALTH_FIRST_EXECUTION_MODE": "paper",
+                    "WEALTH_FIRST_EXECUTION_MIN_TRADE_WEIGHT": "0.125",
+                    "WEALTH_FIRST_DEFAULT_SLEEVE": "DEPLOYED_BRIDGE",
+                }
+            )
+
+            self.assertEqual(settings.event_log_path, root / "runtime" / "events.jsonl")
+            self.assertEqual(settings.output_csv_path, root / "runtime" / "returns.csv")
+            self.assertEqual(settings.execution_log_path, root / "runtime" / "execution.jsonl")
+            self.assertEqual(settings.failure_log_path, root / "runtime" / "failures.jsonl")
+            self.assertEqual(settings.artifact_root_path, root / "runtime" / "artifacts")
+            self.assertEqual(settings.main2_returns_csv_path, root / "data" / "demo.csv")
+            self.assertEqual(settings.main2_compare_detail_csv_path, root / "runtime" / "artifacts" / "baseline_detail.csv")
+            self.assertEqual(
+                settings.allowed_origins,
+                ("https://wealth-first-advisor.vercel.app", "https://preview.example.com"),
+            )
+            self.assertEqual(settings.allowed_origin_regex, r"https://wealth-first-advisor-.*\.vercel\.app")
+            self.assertFalse(settings.normalize_on_ingest)
+            self.assertFalse(settings.execution_probe_on_startup)
+            self.assertEqual(settings.execution_mode, "paper")
+            self.assertAlmostEqual(settings.execution_min_trade_weight, 0.125)
+            self.assertEqual(settings.default_sleeve, "DEPLOYED_BRIDGE")
+
+    def test_load_bridge_bind_from_env_prefers_platform_port_defaults(self) -> None:
+        host, port = load_bridge_bind_from_env({"PORT": "9100"})
+        self.assertEqual(host, "0.0.0.0")
+        self.assertEqual(port, 9100)
+
+        host, port = load_bridge_bind_from_env({"PORT": "9100", "WEALTH_FIRST_HOST": "127.0.0.1", "WEALTH_FIRST_PORT": "9200"})
+        self.assertEqual(host, "127.0.0.1")
+        self.assertEqual(port, 9200)
+
     def test_api_routes_include_explicit_cors_origin_when_configured(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             event_log_path = Path(temp_dir) / "events.jsonl"

@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: wealth-first-bridge
+    env: docker
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    healthCheckPath: /healthz
+    disk:
+      name: wealth-first-bridge-data
+      mountPath: /var/data
+      sizeGB: 5
+    envVars:
+      - key: WEALTH_FIRST_ALLOWED_ORIGINS
+        value: https://wealth-first-advisor.vercel.app
+      - key: WEALTH_FIRST_ALLOWED_ORIGIN_REGEX
+        value: https://wealth-first-advisor-.*\.vercel\.app
+      - key: WEALTH_FIRST_WEBHOOK_TOKEN
+        sync: false
+      - key: WEALTH_FIRST_EXECUTION_MODE
+        value: paper
+      - key: WEALTH_FIRST_EXECUTION_PROBE_ON_STARTUP
+        value: "false"

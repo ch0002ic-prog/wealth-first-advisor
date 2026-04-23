@@ -146,6 +146,42 @@ One-time setup:
 
 Important constraint: the current FastAPI bridge is stateful and launches local `main2` subprocesses, so it should stay on a long-lived host such as a VM, container service, or similar backend runtime. Vercel is a good fit for the frontend, not for the current launcher backend.
 
+## Backend Deployment
+
+The bridge backend now has an environment-driven runtime entrypoint for long-lived hosts:
+
+```bash
+python -m wealth_first.tradingview_bridge serve-env
+```
+
+`serve-env` reads deployment settings from environment variables instead of requiring a long CLI command. The main ones are:
+
+- `HOST` or `WEALTH_FIRST_HOST`: bind host. Defaults to `0.0.0.0`.
+- `PORT` or `WEALTH_FIRST_PORT`: bind port. Defaults to `8000`.
+- `WEALTH_FIRST_EVENT_LOG_PATH`
+- `WEALTH_FIRST_OUTPUT_CSV_PATH`
+- `WEALTH_FIRST_EXECUTION_LOG_PATH`
+- `WEALTH_FIRST_FAILURE_LOG_PATH`
+- `WEALTH_FIRST_ARTIFACT_ROOT_PATH`
+- `WEALTH_FIRST_MAIN2_RETURNS_CSV_PATH`
+- `WEALTH_FIRST_MAIN2_COMPARE_DETAIL_CSV_PATH`
+- `WEALTH_FIRST_ALLOWED_ORIGINS`: comma-separated allowed frontend origins.
+- `WEALTH_FIRST_ALLOWED_ORIGIN_REGEX`: preview-origin regex, useful for Vercel preview builds.
+
+The repository also now includes:
+
+- `Dockerfile`: containerized bridge runtime with RL extras installed so the live `main2` launcher still works.
+- `scripts/start_bridge_runtime.sh`: seeds the persistent artifact volume with the baked-in baseline artifacts and starts `serve-env`.
+- `render.yaml`: a Render blueprint that mounts persistent storage at `/var/data` and exposes `/healthz`.
+
+Recommended deployment shape:
+
+1. Deploy the backend container to a long-lived host such as Render, Railway, Fly.io, or a VM.
+2. Mount persistent storage at `/var/data` so webhook logs, normalized returns, and new `main2` artifacts survive restarts.
+3. Set `WEALTH_FIRST_ALLOWED_ORIGINS` to your Vercel production frontend URL.
+4. Set `WEALTH_FIRST_ALLOWED_ORIGIN_REGEX` to match Vercel preview URLs when you want preview builds to call the live bridge.
+5. Set `VITE_API_BASE_URL` in Vercel to the public backend URL.
+
 ## Example Configuration
 
 ```bash

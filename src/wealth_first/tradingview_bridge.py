@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import argparse
+from collections.abc import Mapping
 from collections import deque
 from contextlib import asynccontextmanager
 import hashlib
 import json
 import logging
+import os
 import re
 import subprocess
 import sys
@@ -64,6 +66,103 @@ class BridgeSettings:
     main2_compare_detail_csv_path: Path | None = None
     allowed_origins: tuple[str, ...] = ()
     allowed_origin_regex: str | None = None
+
+
+def _env_string(env: Mapping[str, str], key: str, default: str | None = None) -> str | None:
+    raw_value = env.get(key)
+    if raw_value is None:
+        return default
+
+    stripped = raw_value.strip()
+    if stripped == "":
+        return default
+    return stripped
+
+
+def _env_path(env: Mapping[str, str], key: str, default: Path | None = None) -> Path | None:
+    raw_value = _env_string(env, key)
+    if raw_value is None:
+        return default
+    return Path(raw_value)
+
+
+def _env_float(env: Mapping[str, str], key: str, default: float | None = None) -> float | None:
+    raw_value = _env_string(env, key)
+    if raw_value is None:
+        return default
+    return float(raw_value)
+
+
+def _env_int(env: Mapping[str, str], key: str, default: int | None = None) -> int | None:
+    raw_value = _env_string(env, key)
+    if raw_value is None:
+        return default
+    return int(raw_value)
+
+
+def _env_bool(env: Mapping[str, str], key: str, default: bool) -> bool:
+    raw_value = _env_string(env, key)
+    if raw_value is None:
+        return default
+
+    normalized = raw_value.lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    raise ValueError(f"Environment variable {key} must be a boolean value.")
+
+
+def _env_csv(env: Mapping[str, str], key: str) -> tuple[str, ...]:
+    raw_value = _env_string(env, key)
+    if raw_value is None:
+        return ()
+    return tuple(part.strip() for part in raw_value.split(",") if part.strip())
+
+
+def load_bridge_settings_from_env(env: Mapping[str, str] | None = None) -> BridgeSettings:
+    runtime_env = os.environ if env is None else env
+    execution_mode = _env_string(runtime_env, "WEALTH_FIRST_EXECUTION_MODE", "none") or "none"
+    if execution_mode not in {"none", "paper", "webhook"}:
+        raise ValueError("WEALTH_FIRST_EXECUTION_MODE must be one of: none, paper, webhook.")
+
+    return BridgeSettings(
+        event_log_path=_env_path(runtime_env, "WEALTH_FIRST_EVENT_LOG_PATH", PROJECT_ROOT / "data" / "tradingview_events.jsonl") or PROJECT_ROOT / "data" / "tradingview_events.jsonl",
+        output_csv_path=_env_path(runtime_env, "WEALTH_FIRST_OUTPUT_CSV_PATH", PROJECT_ROOT / "data" / "tradingview_truth.csv"),
+        webhook_token=_env_string(runtime_env, "WEALTH_FIRST_WEBHOOK_TOKEN"),
+        default_sleeve=_env_string(runtime_env, "WEALTH_FIRST_DEFAULT_SLEEVE", "TRADINGVIEW") or "TRADINGVIEW",
+        aggregate_freq=_env_string(runtime_env, "WEALTH_FIRST_AGGREGATE_FREQ", "D") or "D",
+        base_equity=_env_float(runtime_env, "WEALTH_FIRST_BASE_EQUITY"),
+        normalize_on_ingest=_env_bool(runtime_env, "WEALTH_FIRST_NORMALIZE_ON_INGEST", True),
+        execution_mode=execution_mode,
+        execution_webhook_url=_env_string(runtime_env, "WEALTH_FIRST_EXECUTION_WEBHOOK_URL"),
+        execution_webhook_token=_env_string(runtime_env, "WEALTH_FIRST_EXECUTION_WEBHOOK_TOKEN"),
+        execution_log_path=_env_path(runtime_env, "WEALTH_FIRST_EXECUTION_LOG_PATH", PROJECT_ROOT / "data" / "tradingview_execution.jsonl"),
+        execution_min_trade_weight=_env_float(runtime_env, "WEALTH_FIRST_EXECUTION_MIN_TRADE_WEIGHT", 0.0) or 0.0,
+        cash_symbol=_env_string(runtime_env, "WEALTH_FIRST_CASH_SYMBOL", "CASH") or "CASH",
+        failure_log_path=_env_path(runtime_env, "WEALTH_FIRST_FAILURE_LOG_PATH", PROJECT_ROOT / "data" / "tradingview_bridge_failures.jsonl"),
+        worker_poll_interval_seconds=_env_float(runtime_env, "WEALTH_FIRST_WORKER_POLL_INTERVAL_SECONDS", 0.25) or 0.25,
+        retry_delay_seconds=_env_float(runtime_env, "WEALTH_FIRST_RETRY_DELAY_SECONDS", 2.0) or 2.0,
+        execution_probe_on_startup=_env_bool(runtime_env, "WEALTH_FIRST_EXECUTION_PROBE_ON_STARTUP", True),
+        execution_probe_url=_env_string(runtime_env, "WEALTH_FIRST_EXECUTION_PROBE_URL"),
+        execution_probe_timeout=_env_float(runtime_env, "WEALTH_FIRST_EXECUTION_PROBE_TIMEOUT", 5.0) or 5.0,
+        frontend_dist_path=_env_path(runtime_env, "WEALTH_FIRST_FRONTEND_DIST_PATH"),
+        artifact_root_path=_env_path(runtime_env, "WEALTH_FIRST_ARTIFACT_ROOT_PATH"),
+        python_executable_path=_env_path(runtime_env, "WEALTH_FIRST_PYTHON_EXECUTABLE_PATH"),
+        main2_returns_csv_path=_env_path(runtime_env, "WEALTH_FIRST_MAIN2_RETURNS_CSV_PATH"),
+        main2_compare_detail_csv_path=_env_path(runtime_env, "WEALTH_FIRST_MAIN2_COMPARE_DETAIL_CSV_PATH"),
+        allowed_origins=_env_csv(runtime_env, "WEALTH_FIRST_ALLOWED_ORIGINS"),
+        allowed_origin_regex=_env_string(runtime_env, "WEALTH_FIRST_ALLOWED_ORIGIN_REGEX"),
+    )
+
+
+def load_bridge_bind_from_env(env: Mapping[str, str] | None = None) -> tuple[str, int]:
+    runtime_env = os.environ if env is None else env
+    host = _env_string(runtime_env, "WEALTH_FIRST_HOST", _env_string(runtime_env, "HOST", "0.0.0.0")) or "0.0.0.0"
+    port = _env_int(runtime_env, "WEALTH_FIRST_PORT")
+    if port is None:
+        port = _env_int(runtime_env, "PORT", 8000) or 8000
+    return host, port
 
 
 def _ensure_parent_directory(path: Path) -> None:
@@ -1622,6 +1721,11 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Optional regex used to allow browser origins such as Vercel preview domains.",
     )
 
+    subparsers.add_parser(
+        "serve-env",
+        help="Run the bridge server using WEALTH_FIRST_* environment variables plus HOST/PORT.",
+    )
+
     normalize_parser = subparsers.add_parser("normalize", help="Convert a TradingView event log into a dated returns CSV.")
     normalize_parser.add_argument("--event-log", required=True, help="Path to the JSONL event log file.")
     normalize_parser.add_argument("--output-csv", required=True, help="Path to the normalized returns CSV.")
@@ -1661,6 +1765,12 @@ def main(argv: list[str] | None = None) -> int:
             allowed_origin_regex=args.allow_origin_regex.strip() if isinstance(args.allow_origin_regex, str) and args.allow_origin_regex.strip() else None,
         )
         uvicorn.run(create_app(settings), host=args.host, port=args.port, log_level="info")
+        return 0
+
+    if args.command == "serve-env":
+        settings = load_bridge_settings_from_env()
+        host, port = load_bridge_bind_from_env()
+        uvicorn.run(create_app(settings), host=host, port=port, log_level="info")
         return 0
 
     if args.command == "normalize":
