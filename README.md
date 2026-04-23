@@ -97,11 +97,13 @@ Or use the convenience launcher:
 
 The React board in `frontend/` is now deployment-ready for a hosted frontend that talks to a separately hosted bridge backend.
 
-For local development, the app still defaults to same-origin `/api` requests. For a hosted frontend such as Vercel, set a build-time API base URL:
+The frontend reads `import.meta.env.VITE_API_BASE_URL` when that variable is present. If it is not set, the app falls back to same-origin `/api` requests, which is the correct behavior when the frontend and API are served from the same public domain.
+
+For local development, keep using the Vite proxy or set a local env file when you want the browser to talk to a specific bridge origin directly:
 
 ```bash
 cd frontend
-cp .env.example .env.local
+cp .env.development.example .env.development.local
 ```
 
 Set `VITE_API_BASE_URL` to the public bridge origin, for example:
@@ -136,8 +138,11 @@ One-time setup:
 
 1. Push this repository to GitHub.
 2. Import the GitHub repository into Vercel.
-3. In the Vercel project settings, set `VITE_API_BASE_URL` to your bridge backend origin.
-4. After the first import, every push to the connected branch will trigger an automatic Vercel deployment.
+3. In Vercel Project Settings -> Environment Variables, set `VITE_API_BASE_URL` for both Preview and Production.
+4. Use the production bridge URL for Production deployments and a staging or preview bridge URL for Preview deployments.
+5. If the API is served from the same public origin as the frontend, leave `VITE_API_BASE_URL` unset so the app keeps using same-origin `/api` requests.
+6. Redeploy after changing environment variables so Vite rebuilds with the new values.
+7. After the first import, every push to the connected branch will trigger an automatic Vercel deployment.
 
 Important constraint: the current FastAPI bridge is stateful and launches local `main2` subprocesses, so it should stay on a long-lived host such as a VM, container service, or similar backend runtime. Vercel is a good fit for the frontend, not for the current launcher backend.
 
