@@ -182,6 +182,19 @@ Recommended deployment shape:
 4. Set `WEALTH_FIRST_ALLOWED_ORIGIN_REGEX` to match Vercel preview URLs when you want preview builds to call the live bridge.
 5. Set `VITE_API_BASE_URL` in Vercel to the public backend URL.
 
+### Render Steps
+
+If you want the fastest concrete backend path, use Render with the included blueprint:
+
+1. In Render, create a new Blueprint and point it at this GitHub repository.
+2. Accept the generated `wealth-first-bridge` web service and persistent disk mounted at `/var/data`.
+3. Add `WEALTH_FIRST_WEBHOOK_TOKEN` as a secret before the first deploy.
+4. If your frontend uses a custom domain instead of `wealth-first-advisor.vercel.app`, update `WEALTH_FIRST_ALLOWED_ORIGINS` and `WEALTH_FIRST_ALLOWED_ORIGIN_REGEX` in Render.
+5. Deploy and confirm the service responds on `/healthz`.
+6. Copy the Render service URL into Vercel as `VITE_API_BASE_URL` and redeploy the frontend.
+
+The committed `render.yaml` already pins the persistent runtime paths used by the bridge (`/var/data/tradingview_events.jsonl`, `/var/data/tradingview_truth.csv`, `/var/data/artifacts`, and the default baseline detail CSV under `/var/data/artifacts/main2_2007_v8_best_detail.csv`).
+
 ## Example Configuration
 
 ```bash

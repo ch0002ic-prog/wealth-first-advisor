@@ -10,6 +10,20 @@ services:
       mountPath: /var/data
       sizeGB: 5
     envVars:
+      - key: WEALTH_FIRST_RUNTIME_ROOT
+        value: /var/data
+      - key: WEALTH_FIRST_ARTIFACT_ROOT_PATH
+        value: /var/data/artifacts
+      - key: WEALTH_FIRST_EVENT_LOG_PATH
+        value: /var/data/tradingview_events.jsonl
+      - key: WEALTH_FIRST_OUTPUT_CSV_PATH
+        value: /var/data/tradingview_truth.csv
+      - key: WEALTH_FIRST_EXECUTION_LOG_PATH
+        value: /var/data/tradingview_execution.jsonl
+      - key: WEALTH_FIRST_FAILURE_LOG_PATH
+        value: /var/data/tradingview_bridge_failures.jsonl
+      - key: WEALTH_FIRST_MAIN2_COMPARE_DETAIL_CSV_PATH
+        value: /var/data/artifacts/main2_2007_v8_best_detail.csv
       - key: WEALTH_FIRST_ALLOWED_ORIGINS
         value: https://wealth-first-advisor.vercel.app
       - key: WEALTH_FIRST_ALLOWED_ORIGIN_REGEX
