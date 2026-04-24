@@ -90,6 +90,9 @@ def _run_case(
     run_name = (
         f"{case.profile}_c{int(case.transaction_cost_bps)}"
         f"_s{case.seed}_g{case.gate}"
+        f"_pbr{int(path_bootstrap_reps)}"
+        f"_pbsz{int(path_bootstrap_block_size)}"
+        f"_pbs{int(path_bootstrap_seed + case.seed)}"
     )
     run_dir = RUN_ROOT / run_name
     run_dir.mkdir(parents=True, exist_ok=True)
