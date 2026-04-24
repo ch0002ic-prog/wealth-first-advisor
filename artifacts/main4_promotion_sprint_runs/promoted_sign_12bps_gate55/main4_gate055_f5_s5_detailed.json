@@ -1,0 +1,65 @@
+{
+  "fingerprint": {
+    "git_commit": "865d4618017899533279a56b4ea30781bfa9e304",
+    "numpy_version": "2.4.4",
+    "pandas_version": "3.0.2",
+    "python_version": "3.14.3",
+    "python_version_prefix": "3.14",
+    "main4_sha256": "59f98c815446d2fef767be57474f3b202eb9af7fca3e5525e80739b36b2a85e0",
+    "medium_capacity_sha256": "32911354598a0f2fc4eb64467df25dcdc16951337b3b4baa11c20fd2d58ca4f0"
+  },
+  "config": {
+    "min_validation_threshold": 0.0055,
+    "min_robust_min_relative": 0.0,
+    "min_active_fraction": 0.01,
+    "n_folds": 5,
+    "validation_fraction": 0.15,
+    "test_fraction": 0.1,
+    "medium_capacity_cfg": {
+      "min_spy_weight": 0.8,
+      "max_spy_weight": 1.05,
+      "initial_spy_weight": 1.0,
+      "action_smoothing": 1.0,
+      "no_trade_band": 0.02,
+      "transaction_cost_bps": 12.0,
+      "slippage_bps": 12.0,
+      "ridge_l2": 0.015,
+      "scale_turnover_penalty": 0.0,
+      "min_signal_scale": -0.5,
+      "max_signal_scale": 0.5,
+      "target_mode": "sign",
+      "use_multiplicative_signal": true,
+      "quantile_loss_tau": null
+    }
+  },
+  "summary_metrics": {
+    "n_rows": 5,
+    "mean_test_relative_total_return": 0.0043308795406854506,
+    "mean_validation_relative_total_return": 0.008758410499727764,
+    "beat_hold_fraction": 0.8,
+    "active_fraction": 1.0,
+    "mean_turnover": 0.00048771069314665116,
+    "robust_min_test_relative": -0.004198394791590343,
+    "mean_validation_gate_suppression_rate": 0.9856527977044476,
+    "mean_test_gate_suppression_rate": 0.9810344827586206,
+    "mean_test_executed_step_count": 8.8
+  },
+  "gate_checks": {
+    "validation_threshold": {
+      "passed": true,
+      "value": 0.008758410499727764,
+      "threshold": 0.0055
+    },
+    "robust_min_threshold": {
+      "passed": false,
+      "value": -0.004198394791590343,
+      "threshold": 0.0
+    },
+    "active_fraction_threshold": {
+      "passed": true,
+      "value": 1.0,
+      "threshold": 0.01
+    },
+    "overall_passed": false
+  }
+}
