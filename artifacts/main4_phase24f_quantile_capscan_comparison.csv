@@ -1,0 +1,6 @@
+label,max_relaxation,best_profile,strict_feasible,strict_feasible_profile_count,strict_best_eligible_profile,path_bootstrap_fail_count,resolved_threshold_before_cap,resolved_threshold_after_cap,cap_applied,relaxation_after_cap
+uncapped,-1.0,promoted_tanh,True,1,promoted_tanh,0,-0.011947522573661109,-0.011947522573661109,False,0.005947522573661108
+cap0005,0.0005,,False,0,,3,-0.011947522573661109,-0.006500000000000001,True,0.0005000000000000004
+cap0010,0.001,,False,0,,2,-0.011947522573661109,-0.007,True,0.001
+cap0020,0.002,,False,0,,1,-0.011947522573661109,-0.008,True,0.002
+cap0030,0.003,,False,0,,1,-0.011947522573661109,-0.009000000000000001,True,0.003000000000000001
