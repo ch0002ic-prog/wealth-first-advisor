@@ -678,6 +678,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--path-bootstrap-seed", type=int, default=12345)
     parser.add_argument("--auto-calibrate-gates", action="store_true")
     parser.add_argument("--auto-calibrate-apply", action="store_true")
+    parser.add_argument(
+        "--selection-mode",
+        choices=["advisory_fallback", "strict_only"],
+        default="advisory_fallback",
+        help=(
+            "advisory_fallback: apply calibrated fallback when strict is infeasible; "
+            "strict_only: never promote fallback selection, keep strict decision only."
+        ),
+    )
     parser.add_argument("--auto-calibrate-min-feasible-profiles", type=int, default=1)
     parser.add_argument("--auto-calibrate-weight-tail-worst-decile", type=float, default=1.0)
     parser.add_argument("--auto-calibrate-weight-robust-min", type=float, default=1.0)
@@ -819,11 +828,13 @@ def main(argv: list[str] | None = None) -> int:
                 bootstrap_seed=int(args.bootstrap_seed),
             )
 
-    selected_gates = (
-        auto_calibration["relaxed_gates"]
-        if (auto_calibration is not None and calibrated_summary is not None)
-        else strict_gates
+    use_calibrated_selection = (
+        args.selection_mode == "advisory_fallback"
+        and auto_calibration is not None
+        and calibrated_summary is not None
     )
+
+    selected_gates = auto_calibration["relaxed_gates"] if use_calibrated_selection else strict_gates
     selected_eligible_profiles = _eligible_profiles_for_gates(
         calibrated_summary if calibrated_summary is not None else profile_summary,
         selected_gates,
@@ -842,8 +853,16 @@ def main(argv: list[str] | None = None) -> int:
         for gate in _collect_failed_gates(row, strict_gates):
             failed_gate_counts[gate] += 1
 
-    selected_profile_summary = calibrated_summary if (calibrated_summary is not None) else profile_summary
+    selected_profile_summary = calibrated_summary if use_calibrated_selection else profile_summary
     best_profile = selected_profile_summary[0]["profile"] if selected_profile_summary else None
+    if args.selection_mode == "strict_only" and not strict_has_eligible:
+        best_profile = None
+
+    if args.selection_mode == "strict_only" and not strict_has_eligible:
+        warnings.append(
+            "selection_mode=strict_only kept final selection unset because strict gates are infeasible; "
+            "see promotion_report.auto_calibration for advisory fallback candidates."
+        )
 
     summary = {
         "mode": args.mode,
@@ -872,6 +891,7 @@ def main(argv: list[str] | None = None) -> int:
             "strict_failed_gate_counts": failed_gate_counts,
             "auto_calibration_requested": bool(args.auto_calibrate_gates),
             "auto_calibration_applied": bool(calibrated_summary is not None),
+            "selection_mode": str(args.selection_mode),
             "auto_calibration_min_feasible_profiles": int(max(args.auto_calibrate_min_feasible_profiles, 1)),
             "auto_calibration_relaxation_weights": relaxation_weights,
             "auto_calibration": auto_calibration,
