@@ -247,6 +247,13 @@ def main(
     transaction_cost_bps: float = 5.0,
     slippage_bps: float = 5.0,
     ridge_l2: float = 1.0,
+    scale_turnover_penalty: float = 0.0,
+    min_signal_scale: float = -0.75,
+    max_signal_scale: float = 0.75,
+    target_mode: str = "sign",
+    min_spy_weight: float = 0.80,
+    max_spy_weight: float = 1.05,
+    initial_spy_weight: float = 1.0,
     action_smoothing: float = 0.5,
     no_trade_band: float = 0.02,
     min_validation_threshold: float | None = None,
@@ -269,9 +276,16 @@ def main(
     print(f"Loaded {len(spy_returns)} days", file=sys.stderr)
 
     medium_cfg = MediumCapacityConfig(
+        min_spy_weight=min_spy_weight,
+        max_spy_weight=max_spy_weight,
+        initial_spy_weight=initial_spy_weight,
         transaction_cost_bps=transaction_cost_bps,
         slippage_bps=slippage_bps,
         ridge_l2=ridge_l2,
+        scale_turnover_penalty=scale_turnover_penalty,
+        min_signal_scale=min_signal_scale,
+        max_signal_scale=max_signal_scale,
+        target_mode=target_mode,
         action_smoothing=action_smoothing,
         no_trade_band=no_trade_band,
     )
@@ -413,6 +427,13 @@ if __name__ == "__main__":
     parser.add_argument("--transaction-cost-bps", type=float, default=5.0)
     parser.add_argument("--slippage-bps", type=float, default=5.0)
     parser.add_argument("--ridge-l2", type=float, default=1.0)
+    parser.add_argument("--scale-turnover-penalty", type=float, default=0.0)
+    parser.add_argument("--min-signal-scale", type=float, default=-0.75)
+    parser.add_argument("--max-signal-scale", type=float, default=0.75)
+    parser.add_argument("--target-mode", choices=["sign", "tanh_return"], default="sign")
+    parser.add_argument("--min-spy-weight", type=float, default=0.80)
+    parser.add_argument("--max-spy-weight", type=float, default=1.05)
+    parser.add_argument("--initial-spy-weight", type=float, default=1.0)
     parser.add_argument("--action-smoothing", type=float, default=0.5)
     parser.add_argument("--no-trade-band", type=float, default=0.02)
     parser.add_argument(
@@ -458,6 +479,13 @@ if __name__ == "__main__":
         transaction_cost_bps=args.transaction_cost_bps,
         slippage_bps=args.slippage_bps,
         ridge_l2=args.ridge_l2,
+        scale_turnover_penalty=args.scale_turnover_penalty,
+        min_signal_scale=args.min_signal_scale,
+        max_signal_scale=args.max_signal_scale,
+        target_mode=args.target_mode,
+        min_spy_weight=args.min_spy_weight,
+        max_spy_weight=args.max_spy_weight,
+        initial_spy_weight=args.initial_spy_weight,
         action_smoothing=args.action_smoothing,
         no_trade_band=args.no_trade_band,
         min_validation_threshold=args.min_validation_threshold,

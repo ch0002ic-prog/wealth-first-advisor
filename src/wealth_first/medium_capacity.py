@@ -32,6 +32,13 @@ class MediumCapacityConfig:
     slippage_bps: float = 5.0
     # Ridge L2 regularization for linear stage
     ridge_l2: float = 1.0
+    # Optional penalty on validation turnover during scale selection.
+    scale_turnover_penalty: float = 0.0
+    # Optional explicit bounds on stage-2 signal scale search.
+    min_signal_scale: float = -0.75
+    max_signal_scale: float = 0.75
+    # Stage-1 target construction.
+    target_mode: str = "sign"
     # Whether to use multiplicative signal or additive
     use_multiplicative_signal: bool = True
     # Quantile for robust tail behavior
@@ -55,7 +62,6 @@ def _build_simple_features(spy_returns: pd.Series) -> pd.DataFrame:
     """Build a minimal, fast feature set for signal prediction."""
     price = (1.0 + spy_returns).cumprod()
     lagged_price = price.shift(1)
-    lagged_ret = spy_returns.shift(1)
 
     def rolling_ret(window: int) -> pd.Series:
         return ((1.0 + spy_returns).rolling(window, min_periods=1).apply(np.prod, raw=True) - 1.0).shift(1)
@@ -86,6 +92,17 @@ def _standardize(x: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     std = np.where(std < 1e-8, 1.0, std)
     x_std = (x - mu) / std
     return x_std, mu, std
+
+
+def _build_train_target(train_returns: np.ndarray, cfg: MediumCapacityConfig) -> np.ndarray:
+    """Build the bounded stage-1 target for the linear signal model."""
+    if cfg.target_mode == "sign":
+        return np.sign(train_returns).astype(float)
+    if cfg.target_mode == "tanh_return":
+        scale = float(np.std(train_returns, ddof=0))
+        scale = max(scale, 1e-8)
+        return np.tanh(train_returns / scale).astype(float)
+    raise ValueError(f"Unsupported target_mode: {cfg.target_mode}")
 
 
 def _simulate_signal_path(
@@ -172,9 +189,8 @@ def train_medium_capacity_model(
     # Standardize validation features using training statistics
     val_features_std = (val_features - feature_mu) / feature_std
 
-    # Target for stage 1: binary indicator of positive return
-    # Alternatively could be the actual return or a sign + magnitude signal
-    train_target = np.sign(train_returns).astype(float)
+    # Target for stage 1: bounded sign or bounded return-magnitude signal.
+    train_target = _build_train_target(train_returns, cfg)
     # Ridge regression for the deviation signal
     # X = [1, features...], solve (X^T X + lambda I) w = X^T y
     X_train = np.c_[np.ones(len(train_features_std)), train_features_std]
@@ -198,7 +214,7 @@ def train_medium_capacity_model(
     best_val_return = float("-inf")
     best_validation_result: dict[str, Any] | None = None
 
-    for scale_candidate in np.linspace(-0.5, 0.5, 21):
+    for scale_candidate in np.linspace(cfg.min_signal_scale, cfg.max_signal_scale, 31):
         validation_result = _simulate_signal_path(
             signal_clipped=val_signal_clipped,
             window_returns=val_returns,
@@ -206,9 +222,10 @@ def train_medium_capacity_model(
             signal_scale=float(scale_candidate),
         )
         relative_return = float(validation_result["relative_return"])
+        objective_value = relative_return - cfg.scale_turnover_penalty * float(validation_result["average_turnover"])
 
-        if relative_return > best_val_return:
-            best_val_return = relative_return
+        if objective_value > best_val_return:
+            best_val_return = objective_value
             best_scale = scale_candidate
             best_validation_result = validation_result
 
@@ -227,7 +244,8 @@ def train_medium_capacity_model(
         "n_val_samples": len(val_returns),
         "signal_bias": float(signal_weights[0]),
         "signal_scale": float(best_scale),
-        "val_cumulative_return": float(best_val_return),
+        "val_cumulative_return": float(best_validation_result["relative_return"]),
+        "val_objective": float(best_val_return),
         "signal_weights_l2": float(np.linalg.norm(signal_weights[1:])),
         "validation_signal_abs_p95": float(best_validation_result["signal_abs_p95"]),
         "validation_signal_abs_max": float(best_validation_result["signal_abs_max"]),
