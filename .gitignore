@@ -13,6 +13,7 @@ frontend/.env.*.local
 render.env
 artifacts/debug_*/
 artifacts/*smoke*
+artifacts/main2_live_*
 artifacts/*_check/
 artifacts/*_inspect/
 artifacts/*_logs/

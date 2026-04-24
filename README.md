@@ -144,7 +144,7 @@ One-time setup:
 6. Redeploy after changing environment variables so Vite rebuilds with the new values.
 7. After the first import, every push to the connected branch will trigger an automatic Vercel deployment.
 
-Important constraint: the current FastAPI bridge is stateful because it maintains live webhook, normalization, and execution worker state, so it should stay on a long-lived host such as a VM, container service, or similar backend runtime. Vercel is a good fit for the frontend, not for the current backend worker.
+Important constraint: the current FastAPI bridge is stateful and launches local `main2` subprocesses, so it should stay on a long-lived host such as a VM, container service, or similar backend runtime. Vercel is a good fit for the frontend, not for the current launcher backend.
 
 ## Backend Deployment
 
@@ -163,19 +163,21 @@ python -m wealth_first.tradingview_bridge serve-env
 - `WEALTH_FIRST_EXECUTION_LOG_PATH`
 - `WEALTH_FIRST_FAILURE_LOG_PATH`
 - `WEALTH_FIRST_ARTIFACT_ROOT_PATH`
+- `WEALTH_FIRST_MAIN2_RETURNS_CSV_PATH`
+- `WEALTH_FIRST_MAIN2_COMPARE_DETAIL_CSV_PATH`
 - `WEALTH_FIRST_ALLOWED_ORIGINS`: comma-separated allowed frontend origins.
 - `WEALTH_FIRST_ALLOWED_ORIGIN_REGEX`: preview-origin regex, useful for Vercel preview builds.
 
 The repository also now includes:
 
-- `Dockerfile`: containerized bridge runtime with optional RL research extras still available for future experiments.
+- `Dockerfile`: containerized bridge runtime with RL extras installed so the live `main2` launcher still works.
 - `scripts/start_bridge_runtime.sh`: seeds the persistent artifact volume with the baked-in baseline artifacts and starts `serve-env`.
 - `render.yaml`: a Render blueprint that mounts persistent storage at `/var/data` and exposes `/healthz`.
 
 Recommended deployment shape:
 
 1. Deploy the backend container to a long-lived host such as Render, Railway, Fly.io, or a VM.
-2. Mount persistent storage at `/var/data` so webhook logs, normalized returns, and generated artifacts survive restarts.
+2. Mount persistent storage at `/var/data` so webhook logs, normalized returns, and new `main2` artifacts survive restarts.
 3. Set `WEALTH_FIRST_ALLOWED_ORIGINS` to your Vercel production frontend URL.
 4. Set `WEALTH_FIRST_ALLOWED_ORIGIN_REGEX` to match Vercel preview URLs when you want preview builds to call the live bridge.
 5. Set `VITE_API_BASE_URL` in Vercel to the public backend URL.
@@ -191,7 +193,7 @@ If you want the fastest concrete backend path, use Render with the included blue
 5. Deploy and confirm the service responds on `/healthz`.
 6. Copy the Render service URL into Vercel as `VITE_API_BASE_URL` and redeploy the frontend.
 
-The committed `render.yaml` already pins the persistent runtime paths used by the bridge (`/var/data/tradingview_events.jsonl`, `/var/data/tradingview_truth.csv`, `/var/data/artifacts`).
+The committed `render.yaml` already pins the persistent runtime paths used by the bridge (`/var/data/tradingview_events.jsonl`, `/var/data/tradingview_truth.csv`, `/var/data/artifacts`, and the default baseline detail CSV under `/var/data/artifacts/main2_2007_v8_best_detail.csv`).
 
 ## Example Configuration
 
@@ -245,28 +247,6 @@ Run the offline tests:
 ```bash
 .venv/bin/python -m unittest discover -s tests -v
 ```
-
-Run the locked `main3` reproducibility suite and drift gate:
-
-```bash
-make repro-gate
-```
-
-This runs the three locked A/G/I cases, rewrites the suite summary artifacts, and fails if the new results drift beyond the tolerances stored in `artifacts/main3_repro_baseline_locked.json`.
-
-If you only want to refresh the raw repro outputs without enforcing the gate:
-
-```bash
-make repro-suite
-```
-
-Run the lightweight optimization research audit when you want a current read on where further upside is most realistic:
-
-```bash
-make research-audit
-```
-
-This reruns the `main3` structural diagnosis, runs the current `main4` stress suite, and writes a summarized investigation report to `artifacts/optimization_research_audit.md`.
 
 Install the optional RL research dependency when you want a Gymnasium environment for policy experiments:
 
@@ -365,11 +345,46 @@ The environment reuses the existing turnover, cost, cash-sleeve, and per-sleeve 
 
 For a first training baseline, use the built-in PPO runner. It trains on randomized chronological windows from the training split, evaluates on a held-out tail slice, and can optionally normalize observations and rewards through Stable-Baselines3 `VecNormalize`.
 
-For the current SPY-only medium-capacity path, use `main4` and its repro and stress runners instead. They rebuild features from `SPY_BENCHMARK`, evaluate the bounded two-stage policy across walk-forward folds, and write comparison-ready detail and summary artifacts.
+For the separate SPY-only `main2` case study, use the distributional RL runner instead. It rebuilds features from `SPY_BENCHMARK`, trains a discrete SPY-versus-CASH quantile agent on the same data-driven chrono and regime walk-forward windows, and writes evaluator-style detail and summary artifacts plus an optional comparison against the frozen PPO baseline detail CSV.
+
+The current leading `main2` configuration keeps a hard SPY floor at `0.65`, raises that floor to `0.90` when the prior 63-day SPY path is both strong (`>= 8%` total return) and shallow-drawdown (`>= -10%`), adds a constructive-trend participation floor at `0.85` when the trailing 126-day path is still positive and above its longer moving average, adds a recovery floor at `0.80` after deep 126-day drawdowns when the trailing 21-day path has turned back up, and dampens churn with `action_smoothing=0.50` plus a `0.05` no-trade band. On the six-seed panel this improved the remaining `chrono fold_02 test` and `regime fold_03 validation` under-participation pockets without reopening the old churn problem.
 
 ```bash
-.venv/bin/python scripts/run_main4_repro_suite.py
-.venv/bin/python scripts/run_main4_stress_suite.py
+.venv/bin/python -m wealth_first.main2 \
+  --seeds 7 17 27 37 47 57 \
+  --walk-forward-folds 3 \
+  --train-steps 500 \
+  --validation-eval-interval 100 \
+  --min-spy-weight 0.65 \
+  --trend-floor-min-spy-weight 0.90 \
+  --trend-floor-lookback 63 \
+  --trend-floor-return-threshold 0.08 \
+  --trend-floor-drawdown-threshold -0.10 \
+  --participation-floor-min-spy-weight 0.85 \
+  --participation-floor-lookback 126 \
+  --participation-floor-return-threshold 0.02 \
+  --participation-floor-ma-gap-threshold 0.02 \
+  --participation-floor-drawdown-threshold -0.05 \
+  --recovery-floor-min-spy-weight 0.80 \
+  --recovery-floor-long-lookback 126 \
+  --recovery-floor-drawdown-threshold -0.10 \
+  --recovery-floor-short-lookback 21 \
+  --recovery-floor-return-threshold 0.01 \
+  --recovery-floor-ma-gap-threshold 0.00 \
+  --action-smoothing 0.50 \
+  --no-trade-band 0.05 \
+  --output-prefix artifacts/main2_spy_distributional
+```
+
+An experimental `early crack after strong trend` override is also available through the `--early-crack-*` flags. It can temporarily lower the constructive floor when the longer 63/126-day path is still strong but the trailing 21-day return, MA gap, and short drawdown have all rolled over. The first seed-3 chrono pilot did not improve the frozen-PPO `fold_01 test` gap, so this override remains opt-in rather than part of the promoted default branch.
+
+For a targeted main2 weak-row postmortem, use `scripts/postmortem_main2_windows.py`. It enriches a saved main2 detail CSV with recent-path state, dynamic floor flags, and grouped weak-row summaries so you can inspect under-participation pockets without manual CSV work.
+
+```bash
+.venv/bin/python scripts/postmortem_main2_windows.py \
+  --detail-csv artifacts/main2_spy_distributional_seed7_17_27_37_47_57_default7_detail.csv \
+  --delta-threshold -0.08 \
+  --output-prefix artifacts/main2_postmortem_default7
 ```
 
 For this repo's PPO research, treat `gate4 + earlycap before=2 + p005strict + --normalize-observations` as the frozen live baseline. New PPO work should compare targeted branches against that reference instead of reopening generic tuning sweeps. For a reproducible runner, use `scripts/run_ppo_frozen_live_baseline.sh` and override `SEED`, `SPLIT_METHOD`, `OUTPUT_DIR`, or `PYTHON_BIN` through the environment when needed. To summarize saved frozen-baseline artifacts across regime-balanced and chronological runs, use `scripts/evaluate_frozen_ppo_baseline.py`.
@@ -597,7 +612,11 @@ npm --prefix frontend run build
 
 After that build, `http://127.0.0.1:8000/` serves the compiled React app, `http://127.0.0.1:8000/app` points to the same built frontend explicitly, and `http://127.0.0.1:8000/dashboard` keeps the original static dashboard as a fallback.
 
-The React UI is now focused on bridge operations: live webhook intake, normalized return monitoring, execution telemetry, and a browser-side webhook composer for local testing.
+The React UI also exposes the repo's adaptive Deep/Distributional RL pipeline by reading `wealth_first.main2` experiment artifacts from `artifacts/main2_2007_*`. That board links live webhook intake and execution telemetry to quantile/distributional policy summaries, hardest-window comparisons, and experiment-versus-baseline deltas.
+
+The experiment board now persists its selected artifact, comparison artifact, search text, sort mode, and filter mode into the page URL. That makes it possible to reload or share a local link like `http://127.0.0.1:8000/?exp=...&cmp=...` without losing the current inspection state.
+
+The same UI also includes a `main2` launcher panel backed by `GET /api/pipeline/launch` and `POST /api/pipeline/launch`. Use the `Quick Probe` preset for a fast localhost sanity run and `Board Refresh` for a slightly broader adaptive pipeline refresh. While a run is active, the panel now shows structured DRL progress telemetry from `wealth_first.main2`, including fold progress, checkpoint validation scores, recent event cards, a checkpoint-history trend chart, richer live training internals such as epsilon/replay/loss, and the JSONL progress-log path alongside the raw launcher log. Completed runs write their detail, summary, and `vs_current_best` summary artifacts into `artifacts/` and stream their final artifact paths back into the page.
 
 Optional execution handoff modes let the bridge reuse the allocation layer when alerts include target weights:
 
@@ -682,8 +701,8 @@ Execution handoff payloads should include `target_weights` and, when available, 
   "strategy": "ALLOCATOR",
   "event_type": "rebalance",
   "timestamp": "2024-01-03T21:00:00Z",
-  "target_weights": {"SPY": 0.55, "TLT": 0.25, "CASH": 0.20},
-  "current_weights": {"SPY": 0.40, "TLT": 0.30, "CASH": 0.30},
+  "target_weights": { "SPY": 0.55, "TLT": 0.25, "CASH": 0.2 },
+  "current_weights": { "SPY": 0.4, "TLT": 0.3, "CASH": 0.3 },
   "equity": 100000
 }
 ```
@@ -702,8 +721,8 @@ If you are typing JSON directly into the TradingView alert dialog message field,
   "ticker": "{{ticker}}",
   "equity": 100000,
   "target_weights": {
-    "SPY": 0.40,
-    "CASH": 0.60
+    "SPY": 0.4,
+    "CASH": 0.6
   }
 }
 ```
