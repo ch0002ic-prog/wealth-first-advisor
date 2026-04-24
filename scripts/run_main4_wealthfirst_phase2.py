@@ -662,6 +662,121 @@ def _auto_calibrate_gates(
     return best_candidate if best_candidate is not None else fallback_best
 
 
+def _passes_non_path_strict_gates(
+    profile_row: dict[str, Any],
+    strict_gates: dict[str, float],
+) -> bool:
+    return bool(
+        float(profile_row["pass_rate"]) >= 0.999999
+        and float(profile_row["worst_decile_test_relative"]) >= strict_gates["tail_worst_decile_threshold"]
+        and float(profile_row["worst_robust_min"]) >= strict_gates["robust_min_threshold"]
+        and float(profile_row["mean_turnover"]) <= strict_gates["max_mean_turnover"]
+        and float(profile_row["worst_daily_relative_return"])
+        >= strict_gates["min_worst_daily_relative_return"]
+        and float(profile_row["worst_relative_drawdown"])
+        <= strict_gates["max_worst_relative_drawdown"]
+        and float(profile_row["mean_executed_step_rate"])
+        >= strict_gates["min_mean_executed_step_rate"]
+    )
+
+
+def _resolve_strict_path_bootstrap_gate(
+    *,
+    profile_summary_no_path_gate: list[dict[str, Any]],
+    strict_gates: dict[str, float],
+    mode: str,
+    quantile: float,
+    min_feasible_profiles: int,
+) -> tuple[float, dict[str, Any]]:
+    configured_threshold = float(strict_gates["min_path_bootstrap_robust_min_p05"])
+    if mode == "fixed":
+        return configured_threshold, {
+            "mode": mode,
+            "configured_threshold": configured_threshold,
+            "applied_threshold": configured_threshold,
+            "candidate_population": "configured_fixed",
+            "candidate_count": 0,
+            "candidate_profiles": [],
+            "candidate_values": {},
+            "quantile": None,
+            "min_feasible_profiles_target": None,
+            "resolution_method": "fixed_arg_value",
+        }
+
+    non_path_candidates = [
+        row
+        for row in profile_summary_no_path_gate
+        if _passes_non_path_strict_gates(row, strict_gates)
+    ]
+    candidate_population = "profiles_passing_non_path_strict_gates"
+    if not non_path_candidates:
+        non_path_candidates = list(profile_summary_no_path_gate)
+        candidate_population = "all_profiles_fallback"
+
+    candidate_values = [
+        float(row["mean_path_bootstrap_robust_min_p05"]) for row in non_path_candidates
+    ]
+    candidate_profiles = [str(row["profile"]) for row in non_path_candidates]
+    profile_value_map = {
+        str(row["profile"]): float(row["mean_path_bootstrap_robust_min_p05"])
+        for row in non_path_candidates
+    }
+
+    if not candidate_values:
+        return configured_threshold, {
+            "mode": mode,
+            "configured_threshold": configured_threshold,
+            "applied_threshold": configured_threshold,
+            "candidate_population": "no_candidates",
+            "candidate_count": 0,
+            "candidate_profiles": [],
+            "candidate_values": {},
+            "quantile": None,
+            "min_feasible_profiles_target": None,
+            "resolution_method": "fallback_to_configured_threshold",
+        }
+
+    if mode == "quantile":
+        q = float(min(max(quantile, 0.0), 1.0))
+        applied = float(np.quantile(np.asarray(candidate_values, dtype=float), q))
+        return applied, {
+            "mode": mode,
+            "configured_threshold": configured_threshold,
+            "applied_threshold": applied,
+            "candidate_population": candidate_population,
+            "candidate_count": int(len(candidate_values)),
+            "candidate_profiles": candidate_profiles,
+            "candidate_values": profile_value_map,
+            "quantile": q,
+            "min_feasible_profiles_target": None,
+            "resolution_method": "quantile_over_candidate_population",
+        }
+
+    if mode == "min_feasible_target":
+        target = int(max(min_feasible_profiles, 1))
+        sorted_values = sorted(candidate_values, reverse=True)
+        effective_target = min(target, len(sorted_values))
+        index = min(target - 1, len(sorted_values) - 1)
+        applied = float(sorted_values[index])
+        return applied, {
+            "mode": mode,
+            "configured_threshold": configured_threshold,
+            "applied_threshold": applied,
+            "candidate_population": candidate_population,
+            "candidate_count": int(len(candidate_values)),
+            "candidate_profiles": candidate_profiles,
+            "candidate_values": profile_value_map,
+            "quantile": None,
+            "min_feasible_profiles_target": target,
+            "min_feasible_profiles_effective": int(effective_target),
+            "min_feasible_profiles_target_achievable": bool(len(sorted_values) >= target),
+            "resolved_rank_index": int(index),
+            "resolution_method": "max_threshold_meeting_min_candidate_feasibility",
+        }
+
+    raise ValueError(f"Unsupported strict path-bootstrap gate mode: {mode}")
+
+
 def _build_fallback_stress_table(
     *,
     strict_profile_summary: list[dict[str, Any]],
@@ -779,6 +894,30 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-worst-relative-drawdown", type=float, default=0.030)
     parser.add_argument("--min-mean-executed-step-rate", type=float, default=0.0)
     parser.add_argument("--min-path-bootstrap-robust-min-p05", type=float, default=-1.0)
+    parser.add_argument(
+        "--strict-path-bootstrap-gate-mode",
+        choices=["fixed", "quantile", "min_feasible_target"],
+        default="fixed",
+        help=(
+            "fixed: use --min-path-bootstrap-robust-min-p05 directly; "
+            "quantile: adapt threshold from profile path-bootstrap quantile; "
+            "min_feasible_target: set highest threshold keeping a minimum candidate count."
+        ),
+    )
+    parser.add_argument(
+        "--strict-path-bootstrap-gate-quantile",
+        type=float,
+        default=0.50,
+        help="Quantile used when --strict-path-bootstrap-gate-mode=quantile (0..1).",
+    )
+    parser.add_argument(
+        "--strict-path-bootstrap-gate-min-feasible-profiles",
+        type=int,
+        default=1,
+        help=(
+            "Candidate-count target when --strict-path-bootstrap-gate-mode=min_feasible_target."
+        ),
+    )
     parser.add_argument("--bootstrap-reps", type=int, default=400)
     parser.add_argument("--bootstrap-seed", type=int, default=12345)
     parser.add_argument("--path-bootstrap-reps", type=int, default=0)
@@ -849,7 +988,17 @@ def main(argv: list[str] | None = None) -> int:
         ascending=[True, True, True],
     ).to_csv(detail_csv, index=False)
 
-    profile_summary = _build_profile_summary(
+    strict_gates = {
+        "tail_worst_decile_threshold": float(args.tail_worst_decile_threshold),
+        "robust_min_threshold": float(args.robust_min_threshold),
+        "max_mean_turnover": float(args.max_mean_turnover),
+        "min_worst_daily_relative_return": float(args.min_worst_daily_relative_return),
+        "max_worst_relative_drawdown": float(args.max_worst_relative_drawdown),
+        "min_mean_executed_step_rate": float(args.min_mean_executed_step_rate),
+        "min_path_bootstrap_robust_min_p05": float(args.min_path_bootstrap_robust_min_p05),
+    }
+
+    profile_summary_no_path_gate = _build_profile_summary(
         table=table,
         tail_worst_decile_threshold=float(args.tail_worst_decile_threshold),
         robust_min_threshold=float(args.robust_min_threshold),
@@ -857,7 +1006,30 @@ def main(argv: list[str] | None = None) -> int:
         min_worst_daily_relative_return=float(args.min_worst_daily_relative_return),
         max_worst_relative_drawdown=float(args.max_worst_relative_drawdown),
         min_mean_executed_step_rate=float(args.min_mean_executed_step_rate),
-        min_path_bootstrap_robust_min_p05=float(args.min_path_bootstrap_robust_min_p05),
+        min_path_bootstrap_robust_min_p05=-1e12,
+        bootstrap_reps=int(args.bootstrap_reps),
+        bootstrap_seed=int(args.bootstrap_seed),
+    )
+    resolved_strict_path_bootstrap_threshold, strict_path_bootstrap_gate_audit = (
+        _resolve_strict_path_bootstrap_gate(
+            profile_summary_no_path_gate=profile_summary_no_path_gate,
+            strict_gates=strict_gates,
+            mode=str(args.strict_path_bootstrap_gate_mode),
+            quantile=float(args.strict_path_bootstrap_gate_quantile),
+            min_feasible_profiles=int(args.strict_path_bootstrap_gate_min_feasible_profiles),
+        )
+    )
+    strict_gates["min_path_bootstrap_robust_min_p05"] = float(resolved_strict_path_bootstrap_threshold)
+
+    profile_summary = _build_profile_summary(
+        table=table,
+        tail_worst_decile_threshold=float(strict_gates["tail_worst_decile_threshold"]),
+        robust_min_threshold=float(strict_gates["robust_min_threshold"]),
+        max_mean_turnover=float(strict_gates["max_mean_turnover"]),
+        min_worst_daily_relative_return=float(strict_gates["min_worst_daily_relative_return"]),
+        max_worst_relative_drawdown=float(strict_gates["max_worst_relative_drawdown"]),
+        min_mean_executed_step_rate=float(strict_gates["min_mean_executed_step_rate"]),
+        min_path_bootstrap_robust_min_p05=float(strict_gates["min_path_bootstrap_robust_min_p05"]),
         bootstrap_reps=int(args.bootstrap_reps),
         bootstrap_seed=int(args.bootstrap_seed),
     )
@@ -876,16 +1048,6 @@ def main(argv: list[str] | None = None) -> int:
                 "No profile met all wealth-first eligibility gates; consider relaxing thresholds "
                 "or expanding profile search space."
             )
-
-    strict_gates = {
-        "tail_worst_decile_threshold": float(args.tail_worst_decile_threshold),
-        "robust_min_threshold": float(args.robust_min_threshold),
-        "max_mean_turnover": float(args.max_mean_turnover),
-        "min_worst_daily_relative_return": float(args.min_worst_daily_relative_return),
-        "max_worst_relative_drawdown": float(args.max_worst_relative_drawdown),
-        "min_mean_executed_step_rate": float(args.min_mean_executed_step_rate),
-        "min_path_bootstrap_robust_min_p05": float(args.min_path_bootstrap_robust_min_p05),
-    }
 
     strict_eligible_profiles = [row["profile"] for row in profile_summary if row["eligible"]]
     strict_has_eligible = bool(strict_eligible_profiles)
@@ -1062,6 +1224,12 @@ def main(argv: list[str] | None = None) -> int:
             "auto_calibration_requested": bool(args.auto_calibrate_gates),
             "auto_calibration_applied": bool(calibrated_summary is not None),
             "selection_mode": str(args.selection_mode),
+            "strict_path_bootstrap_gate_mode": str(args.strict_path_bootstrap_gate_mode),
+            "strict_path_bootstrap_gate_quantile": float(args.strict_path_bootstrap_gate_quantile),
+            "strict_path_bootstrap_gate_min_feasible_profiles": int(
+                max(args.strict_path_bootstrap_gate_min_feasible_profiles, 1)
+            ),
+            "strict_path_bootstrap_gate_audit": strict_path_bootstrap_gate_audit,
             "auto_calibration_min_feasible_profiles": int(max(args.auto_calibrate_min_feasible_profiles, 1)),
             "auto_calibration_relaxation_weights": relaxation_weights,
             "auto_calibration": auto_calibration,
