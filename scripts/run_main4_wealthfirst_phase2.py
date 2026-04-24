@@ -777,6 +777,40 @@ def _resolve_strict_path_bootstrap_gate(
     raise ValueError(f"Unsupported strict path-bootstrap gate mode: {mode}")
 
 
+def _apply_strict_path_bootstrap_relaxation_cap(
+    *,
+    configured_threshold: float,
+    resolved_threshold: float,
+    max_relaxation: float,
+) -> tuple[float, dict[str, Any]]:
+    """Cap adaptive relaxation so strict threshold cannot be loosened beyond a fixed bound."""
+    if max_relaxation < 0.0:
+        return float(resolved_threshold), {
+            "relaxation_cap_enabled": False,
+            "configured_threshold": float(configured_threshold),
+            "resolved_threshold_before_cap": float(resolved_threshold),
+            "resolved_threshold_after_cap": float(resolved_threshold),
+            "max_relaxation": float(max_relaxation),
+            "cap_applied": False,
+            "relaxation_before_cap": float(configured_threshold - resolved_threshold),
+            "relaxation_after_cap": float(configured_threshold - resolved_threshold),
+        }
+
+    effective_floor = float(configured_threshold - max_relaxation)
+    capped_threshold = float(max(resolved_threshold, effective_floor))
+    return capped_threshold, {
+        "relaxation_cap_enabled": True,
+        "configured_threshold": float(configured_threshold),
+        "resolved_threshold_before_cap": float(resolved_threshold),
+        "resolved_threshold_after_cap": float(capped_threshold),
+        "max_relaxation": float(max_relaxation),
+        "effective_threshold_floor": float(effective_floor),
+        "cap_applied": bool(capped_threshold != float(resolved_threshold)),
+        "relaxation_before_cap": float(configured_threshold - resolved_threshold),
+        "relaxation_after_cap": float(configured_threshold - capped_threshold),
+    }
+
+
 def _build_fallback_stress_table(
     *,
     strict_profile_summary: list[dict[str, Any]],
@@ -918,6 +952,15 @@ def main(argv: list[str] | None = None) -> int:
             "Candidate-count target when --strict-path-bootstrap-gate-mode=min_feasible_target."
         ),
     )
+    parser.add_argument(
+        "--strict-path-bootstrap-gate-max-relaxation",
+        type=float,
+        default=-1.0,
+        help=(
+            "Maximum allowed adaptive relaxation for min_path_bootstrap_robust_min_p05; "
+            "set <0 to disable cap."
+        ),
+    )
     parser.add_argument("--bootstrap-reps", type=int, default=400)
     parser.add_argument("--bootstrap-seed", type=int, default=12345)
     parser.add_argument("--path-bootstrap-reps", type=int, default=0)
@@ -1019,7 +1062,15 @@ def main(argv: list[str] | None = None) -> int:
             min_feasible_profiles=int(args.strict_path_bootstrap_gate_min_feasible_profiles),
         )
     )
-    strict_gates["min_path_bootstrap_robust_min_p05"] = float(resolved_strict_path_bootstrap_threshold)
+    capped_strict_path_bootstrap_threshold, strict_path_bootstrap_relaxation_cap_audit = (
+        _apply_strict_path_bootstrap_relaxation_cap(
+            configured_threshold=float(args.min_path_bootstrap_robust_min_p05),
+            resolved_threshold=float(resolved_strict_path_bootstrap_threshold),
+            max_relaxation=float(args.strict_path_bootstrap_gate_max_relaxation),
+        )
+    )
+    strict_path_bootstrap_gate_audit["relaxation_cap"] = strict_path_bootstrap_relaxation_cap_audit
+    strict_gates["min_path_bootstrap_robust_min_p05"] = float(capped_strict_path_bootstrap_threshold)
 
     profile_summary = _build_profile_summary(
         table=table,
@@ -1228,6 +1279,9 @@ def main(argv: list[str] | None = None) -> int:
             "strict_path_bootstrap_gate_quantile": float(args.strict_path_bootstrap_gate_quantile),
             "strict_path_bootstrap_gate_min_feasible_profiles": int(
                 max(args.strict_path_bootstrap_gate_min_feasible_profiles, 1)
+            ),
+            "strict_path_bootstrap_gate_max_relaxation": float(
+                args.strict_path_bootstrap_gate_max_relaxation
             ),
             "strict_path_bootstrap_gate_audit": strict_path_bootstrap_gate_audit,
             "auto_calibration_min_feasible_profiles": int(max(args.auto_calibrate_min_feasible_profiles, 1)),
