@@ -1,5 +1,27 @@
 # Neighborhood Search Results: 5-Fold Strict Gate Analysis
 
+## Update (2026-04-24, Later Session): Promotion Baseline Replaced
+
+The original sign-target recommendation in this note has been superseded by a later head-to-head run.
+
+Superseding artifacts:
+- `artifacts/main4_promotion_headtohead_full_detail.csv`
+- `artifacts/main4_promotion_headtohead_full_summary.json`
+
+New promoted winner:
+- `target_mode=tanh_return`
+- `ridge_l2=0.015`
+- `action_smoothing=1.0`
+- `min_signal_scale=-0.75`
+- `max_signal_scale=0.75`
+- strict gates (`gate=55`, robust-min >= 0, 5 folds) PASS at 12/15/18 bps.
+
+Matched sign-vs-tanh comparisons in the summary show tanh winning on mean test relative return and robust-min while sign rows fail robust-min.
+
+Current deployment source of truth:
+- `config/promoted_main4.env`
+- `DEPLOYMENT_PROMOTED_MAIN4.md`
+
 ## Summary
 
 Executed grid search over parameter space: **band ∈ [0.010, 0.012, 0.015, 0.018, 0.020], smoothing ∈ [0.7, 0.8, 0.9, 1.0]**

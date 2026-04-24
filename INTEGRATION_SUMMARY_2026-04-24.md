@@ -1,9 +1,18 @@
 # Main4 Promotion Integration - Implementation Summary
 
+> Update (later 2026-04-24): The originally integrated sign-target promotion has been superseded by the target-aware `tanh_return` promotion after consolidated head-to-head testing.
+>
+> Current source of truth:
+> - `config/promoted_main4.env`
+> - `artifacts/main4_promotion_headtohead_full_summary.json`
+> - `DEPLOYMENT_PROMOTED_MAIN4.md`
+>
+> Updated friction validation range: `12-18 bps` (strict gate pass for promoted tanh branch).
+
 **Date:** 2026-04-24  
 **Status:** ✓ COMPLETE  
-**Friction Range:** 12-15 bps (safe operation zone)  
-**Policy:** Ridge L2=0.015, Action Smoothing=1.0
+**Friction Range:** 12-18 bps (safe operation zone)  
+**Policy:** Ridge L2=0.015, target_mode=tanh_return, Action Smoothing=1.0
 
 ---
 

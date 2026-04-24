@@ -68,6 +68,13 @@ class BridgeSettings:
     allowed_origin_regex: str | None = None
     # Promoted main4 configuration (2026-04-24)
     main4_ridge_l2: float | None = None
+    main4_target_mode: str | None = None
+    main4_scale_turnover_penalty: float | None = None
+    main4_min_signal_scale: float | None = None
+    main4_max_signal_scale: float | None = None
+    main4_min_spy_weight: float | None = None
+    main4_max_spy_weight: float | None = None
+    main4_initial_spy_weight: float | None = None
     main4_action_smoothing: float | None = None
     main4_transaction_cost_bps: float | None = None
     main4_slippage_bps: float | None = None
@@ -168,6 +175,13 @@ def load_bridge_settings_from_env(env: Mapping[str, str] | None = None) -> Bridg
         allowed_origins=_env_csv(runtime_env, "WEALTH_FIRST_ALLOWED_ORIGINS"),
         allowed_origin_regex=_env_string(runtime_env, "WEALTH_FIRST_ALLOWED_ORIGIN_REGEX"),
         main4_ridge_l2=_env_float(runtime_env, "WEALTH_FIRST_MAIN4_RIDGE_L2"),
+        main4_target_mode=_env_string(runtime_env, "WEALTH_FIRST_MAIN4_TARGET_MODE"),
+        main4_scale_turnover_penalty=_env_float(runtime_env, "WEALTH_FIRST_MAIN4_SCALE_TURNOVER_PENALTY"),
+        main4_min_signal_scale=_env_float(runtime_env, "WEALTH_FIRST_MAIN4_MIN_SIGNAL_SCALE"),
+        main4_max_signal_scale=_env_float(runtime_env, "WEALTH_FIRST_MAIN4_MAX_SIGNAL_SCALE"),
+        main4_min_spy_weight=_env_float(runtime_env, "WEALTH_FIRST_MAIN4_MIN_SPY_WEIGHT"),
+        main4_max_spy_weight=_env_float(runtime_env, "WEALTH_FIRST_MAIN4_MAX_SPY_WEIGHT"),
+        main4_initial_spy_weight=_env_float(runtime_env, "WEALTH_FIRST_MAIN4_INITIAL_SPY_WEIGHT"),
         main4_action_smoothing=_env_float(runtime_env, "WEALTH_FIRST_MAIN4_ACTION_SMOOTHING"),
         main4_transaction_cost_bps=_env_float(runtime_env, "WEALTH_FIRST_MAIN4_TRANSACTION_COST_BPS"),
         main4_slippage_bps=_env_float(runtime_env, "WEALTH_FIRST_MAIN4_SLIPPAGE_BPS"),
@@ -1659,6 +1673,13 @@ def create_app(settings: BridgeSettings) -> FastAPI:
             "promoted": True,
             "policy": {
                 "ridge_l2": settings.main4_ridge_l2,
+                "target_mode": settings.main4_target_mode,
+                "scale_turnover_penalty": settings.main4_scale_turnover_penalty,
+                "min_signal_scale": settings.main4_min_signal_scale,
+                "max_signal_scale": settings.main4_max_signal_scale,
+                "min_spy_weight": settings.main4_min_spy_weight,
+                "max_spy_weight": settings.main4_max_spy_weight,
+                "initial_spy_weight": settings.main4_initial_spy_weight,
                 "action_smoothing": settings.main4_action_smoothing,
                 "transaction_cost_bps": settings.main4_transaction_cost_bps,
                 "slippage_bps": settings.main4_slippage_bps,
@@ -1677,6 +1698,13 @@ def create_app(settings: BridgeSettings) -> FastAPI:
             "deployment_cli_command": (
                 f"python -m wealth_first.main4 "
                 f"--ridge-l2 {settings.main4_ridge_l2} "
+                f"--target-mode {settings.main4_target_mode} "
+                f"--scale-turnover-penalty {settings.main4_scale_turnover_penalty} "
+                f"--min-signal-scale {settings.main4_min_signal_scale} "
+                f"--max-signal-scale {settings.main4_max_signal_scale} "
+                f"--min-spy-weight {settings.main4_min_spy_weight} "
+                f"--max-spy-weight {settings.main4_max_spy_weight} "
+                f"--initial-spy-weight {settings.main4_initial_spy_weight} "
                 f"--action-smoothing {settings.main4_action_smoothing} "
                 f"--transaction-cost-bps {settings.main4_transaction_cost_bps} "
                 f"--slippage-bps {settings.main4_slippage_bps} "
