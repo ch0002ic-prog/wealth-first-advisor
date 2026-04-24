@@ -659,6 +659,111 @@ def _auto_calibrate_gates(
     return best_candidate if best_candidate is not None else fallback_best
 
 
+def _build_fallback_stress_table(
+    *,
+    strict_profile_summary: list[dict[str, Any]],
+    table: pd.DataFrame,
+    strict_gates: dict[str, float],
+    bootstrap_reps: int,
+    bootstrap_seed: int,
+) -> list[dict[str, Any]]:
+    """Evaluate multiple fallback calibration profiles for side-by-side comparison."""
+    if not strict_profile_summary:
+        return []
+
+    presets = [
+        {
+            "name": "return_preserving",
+            "min_feasible_profiles": 1,
+            "weights": {
+                "tail_worst_decile_threshold": 1.0,
+                "robust_min_threshold": 1.0,
+                "max_mean_turnover": 2.0,
+                "min_mean_executed_step_rate": 1.0,
+                "min_worst_daily_relative_return": 1.0,
+                "max_worst_relative_drawdown": 1.0,
+                "min_path_bootstrap_robust_min_p05": 1.0,
+            },
+        },
+        {
+            "name": "balanced",
+            "min_feasible_profiles": 2,
+            "weights": {
+                "tail_worst_decile_threshold": 1.0,
+                "robust_min_threshold": 1.0,
+                "max_mean_turnover": 1.0,
+                "min_mean_executed_step_rate": 1.0,
+                "min_worst_daily_relative_return": 1.0,
+                "max_worst_relative_drawdown": 1.0,
+                "min_path_bootstrap_robust_min_p05": 1.0,
+            },
+        },
+        {
+            "name": "tail_preserving",
+            "min_feasible_profiles": 2,
+            "weights": {
+                "tail_worst_decile_threshold": 1.0,
+                "robust_min_threshold": 1.0,
+                "max_mean_turnover": 1.0,
+                "min_mean_executed_step_rate": 1.0,
+                "min_worst_daily_relative_return": 2.0,
+                "max_worst_relative_drawdown": 2.0,
+                "min_path_bootstrap_robust_min_p05": 3.0,
+            },
+        },
+    ]
+
+    rows: list[dict[str, Any]] = []
+    for preset in presets:
+        candidate = _auto_calibrate_gates(
+            strict_profile_summary,
+            strict_gates,
+            relaxation_weights=preset["weights"],
+            min_feasible_profiles=int(preset["min_feasible_profiles"]),
+        )
+        if candidate is None:
+            rows.append(
+                {
+                    "preset": preset["name"],
+                    "status": "no_candidate",
+                    "min_feasible_profiles": int(preset["min_feasible_profiles"]),
+                    "weights": preset["weights"],
+                }
+            )
+            continue
+
+        calibrated_summary = _build_profile_summary(
+            table=table,
+            tail_worst_decile_threshold=float(candidate["relaxed_gates"]["tail_worst_decile_threshold"]),
+            robust_min_threshold=float(candidate["relaxed_gates"]["robust_min_threshold"]),
+            max_mean_turnover=float(candidate["relaxed_gates"]["max_mean_turnover"]),
+            min_worst_daily_relative_return=float(candidate["relaxed_gates"]["min_worst_daily_relative_return"]),
+            max_worst_relative_drawdown=float(candidate["relaxed_gates"]["max_worst_relative_drawdown"]),
+            min_mean_executed_step_rate=float(candidate["relaxed_gates"]["min_mean_executed_step_rate"]),
+            min_path_bootstrap_robust_min_p05=float(candidate["relaxed_gates"]["min_path_bootstrap_robust_min_p05"]),
+            bootstrap_reps=int(bootstrap_reps),
+            bootstrap_seed=int(bootstrap_seed),
+        )
+        eligible_profiles = [row["profile"] for row in calibrated_summary if row["eligible"]]
+        selected_profile = eligible_profiles[0] if eligible_profiles else None
+        rows.append(
+            {
+                "preset": preset["name"],
+                "status": "ok",
+                "min_feasible_profiles": int(preset["min_feasible_profiles"]),
+                "weights": preset["weights"],
+                "auto_calibration_target_profile": candidate["target_profile"],
+                "auto_calibration_weighted_relaxation_score": float(candidate["weighted_relaxation_score"]),
+                "selected_gates": candidate["relaxed_gates"],
+                "selected_profile": selected_profile,
+                "eligible_profiles": eligible_profiles,
+                "eligible_count": int(len(eligible_profiles)),
+            }
+        )
+
+    return rows
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run phase-2 wealth-first stress sweep for main4.")
     parser.add_argument("--mode", choices=["quick", "full"], default="quick")
@@ -836,9 +941,27 @@ def main(argv: list[str] | None = None) -> int:
 
     selected_gates = auto_calibration["relaxed_gates"] if use_calibrated_selection else strict_gates
     selected_eligible_profiles = _eligible_profiles_for_gates(
-        calibrated_summary if calibrated_summary is not None else profile_summary,
+        calibrated_summary if use_calibrated_selection else profile_summary,
         selected_gates,
     )
+
+    advisory_fallback_profile: str | None = None
+    advisory_fallback_eligible_profiles: list[str] = []
+    if calibrated_summary is not None:
+        advisory_fallback_eligible_profiles = [row["profile"] for row in calibrated_summary if row["eligible"]]
+        advisory_fallback_profile = (
+            advisory_fallback_eligible_profiles[0] if advisory_fallback_eligible_profiles else None
+        )
+
+    fallback_stress_table: list[dict[str, Any]] = []
+    if not strict_has_eligible:
+        fallback_stress_table = _build_fallback_stress_table(
+            strict_profile_summary=profile_summary,
+            table=table,
+            strict_gates=strict_gates,
+            bootstrap_reps=int(args.bootstrap_reps),
+            bootstrap_seed=int(args.bootstrap_seed),
+        )
 
     failed_gate_counts: dict[str, int] = {
         "tail_worst_decile": 0,
@@ -895,10 +1018,14 @@ def main(argv: list[str] | None = None) -> int:
             "auto_calibration_min_feasible_profiles": int(max(args.auto_calibrate_min_feasible_profiles, 1)),
             "auto_calibration_relaxation_weights": relaxation_weights,
             "auto_calibration": auto_calibration,
+            "strict_decision_profile": strict_eligible_profiles[0] if strict_eligible_profiles else None,
+            "advisory_fallback_profile": advisory_fallback_profile,
+            "advisory_fallback_eligible_profiles": advisory_fallback_eligible_profiles,
             "selected_gates": selected_gates,
             "selected_best_profile": best_profile,
             "selected_eligible_profiles": selected_eligible_profiles,
             "selected_feasible_profile_count": int(len(selected_eligible_profiles)),
+            "fallback_stress_table": fallback_stress_table,
         },
         "profile_ranking": selected_profile_summary,
         "strict_profile_ranking": profile_summary,
@@ -915,7 +1042,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Wrote {detail_csv.name}")
     print(f"Wrote {summary_json.name}")
     if best_profile is not None:
-        top = profile_summary[0]
+        top = selected_profile_summary[0]
         print(
             f"Best profile: {top['profile']} "
             f"(pass_rate={top['pass_rate']:.3f}, mean_score={top['mean_score']:+.6f}, "
