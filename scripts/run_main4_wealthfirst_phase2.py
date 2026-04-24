@@ -963,6 +963,12 @@ def main(argv: list[str] | None = None) -> int:
             bootstrap_seed=int(args.bootstrap_seed),
         )
 
+    governance_status = {
+        "strict_blocked": bool(not strict_has_eligible),
+        "fallback_advisory_available": bool(advisory_fallback_profile is not None),
+        "fallback_multi_profile": bool(len(advisory_fallback_eligible_profiles) >= 2),
+    }
+
     failed_gate_counts: dict[str, int] = {
         "tail_worst_decile": 0,
         "robust_min": 0,
@@ -975,6 +981,44 @@ def main(argv: list[str] | None = None) -> int:
     for row in profile_summary:
         for gate in _collect_failed_gates(row, strict_gates):
             failed_gate_counts[gate] += 1
+
+    profile_gate_slacks = {
+        row["profile"]: _gate_slacks(row, strict_gates)
+        for row in profile_summary
+    }
+    dominant_blockers = [
+        gate
+        for gate, count in sorted(
+            failed_gate_counts.items(),
+            key=lambda kv: kv[1],
+            reverse=True,
+        )
+        if count > 0
+    ]
+    profiles_blocked_only_by_path_bootstrap = [
+        row["profile"]
+        for row in profile_summary
+        if _collect_failed_gates(row, strict_gates) == ["path_bootstrap_robust_min_p05"]
+    ]
+    profiles_blocked_only_by_activity = [
+        row["profile"]
+        for row in profile_summary
+        if _collect_failed_gates(row, strict_gates) == ["mean_executed_step_rate"]
+    ]
+    deterministic_seed_axis = bool(
+        all(
+            abs(float(row.get("max_seed_std_test_relative", 0.0))) < 1e-12
+            and abs(float(row.get("max_seed_std_robust_min", 0.0))) < 1e-12
+            for row in profile_summary
+        )
+    )
+    fallback_issue_diagnostics = {
+        "dominant_strict_blockers": dominant_blockers,
+        "profiles_blocked_only_by_path_bootstrap": profiles_blocked_only_by_path_bootstrap,
+        "profiles_blocked_only_by_activity": profiles_blocked_only_by_activity,
+        "deterministic_seed_axis": deterministic_seed_axis,
+        "profile_gate_slacks": profile_gate_slacks,
+    }
 
     selected_profile_summary = calibrated_summary if use_calibrated_selection else profile_summary
     best_profile = selected_profile_summary[0]["profile"] if selected_profile_summary else None
@@ -1018,6 +1062,8 @@ def main(argv: list[str] | None = None) -> int:
             "auto_calibration_min_feasible_profiles": int(max(args.auto_calibrate_min_feasible_profiles, 1)),
             "auto_calibration_relaxation_weights": relaxation_weights,
             "auto_calibration": auto_calibration,
+            "governance_status": governance_status,
+            "fallback_issue_diagnostics": fallback_issue_diagnostics,
             "strict_decision_profile": strict_eligible_profiles[0] if strict_eligible_profiles else None,
             "advisory_fallback_profile": advisory_fallback_profile,
             "advisory_fallback_eligible_profiles": advisory_fallback_eligible_profiles,
