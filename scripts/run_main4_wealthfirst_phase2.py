@@ -182,6 +182,14 @@ def _run_case(
         "beat_hold_fraction": float(metrics.get("beat_hold_fraction", 0.0)),
         "active_fraction": float(metrics.get("active_fraction", 0.0)),
         "mean_turnover": float(metrics.get("mean_turnover", 0.0)),
+        "mean_test_executed_step_count": float(metrics.get("mean_test_executed_step_count", 0.0)),
+        "mean_n_test_samples": float(
+            fold_summary.get("n_test_samples", pd.Series([0.0])).mean()
+        ),
+        "mean_executed_step_rate": float(
+            metrics.get("mean_test_executed_step_count", 0.0)
+            / max(float(fold_summary.get("n_test_samples", pd.Series([1.0])).mean()), 1e-8)
+        ),
         "worst_daily_relative_return": float(
             fold_summary.get("test_worst_daily_relative_return", pd.Series([0.0])).min()
         ),
@@ -324,6 +332,8 @@ def _build_profile_summary(
     max_mean_turnover: float,
     min_worst_daily_relative_return: float,
     max_worst_relative_drawdown: float,
+    min_mean_executed_step_rate: float,
+    min_path_bootstrap_robust_min_p05: float,
     bootstrap_reps: int,
     bootstrap_seed: int,
 ) -> list[dict[str, Any]]:
@@ -343,8 +353,12 @@ def _build_profile_summary(
         worst_decile_test_relative = float(grp_sorted["mean_test_relative"].quantile(0.10))
         worst_robust_min = float(grp_sorted["robust_min_test_relative"].min())
         mean_turnover = float(grp_sorted["mean_turnover"].mean())
+        mean_executed_step_rate = float(grp_sorted["mean_executed_step_rate"].mean())
         worst_daily_relative_return = float(grp_sorted["worst_daily_relative_return"].min())
         worst_relative_drawdown = float(grp_sorted["worst_max_relative_drawdown"].max())
+        mean_path_bootstrap_robust_min_p05 = float(
+            grp_sorted["path_bootstrap_robust_min_test_relative_p05"].mean()
+        )
         pass_rate = float(grp_sorted["overall_gate_passed"].mean())
         eligible = bool(
             pass_rate >= 0.999999
@@ -353,6 +367,8 @@ def _build_profile_summary(
             and mean_turnover <= max_mean_turnover
             and worst_daily_relative_return >= min_worst_daily_relative_return
             and worst_relative_drawdown <= max_worst_relative_drawdown
+            and mean_executed_step_rate >= min_mean_executed_step_rate
+            and mean_path_bootstrap_robust_min_p05 >= min_path_bootstrap_robust_min_p05
         )
 
         bootstrap = _bootstrap_profile_stats(
@@ -372,8 +388,10 @@ def _build_profile_summary(
                 "worst_robust_min": worst_robust_min,
                 "worst_decile_test_relative": worst_decile_test_relative,
                 "mean_turnover": mean_turnover,
+                "mean_executed_step_rate": mean_executed_step_rate,
                 "worst_daily_relative_return": worst_daily_relative_return,
                 "worst_relative_drawdown": worst_relative_drawdown,
+                "mean_path_bootstrap_robust_min_p05": mean_path_bootstrap_robust_min_p05,
                 "mean_seed_std_test_relative": float(seed_std_rel.mean()),
                 "max_seed_std_test_relative": float(seed_std_rel.max()),
                 "mean_seed_std_robust_min": float(seed_std_robust.mean()),
@@ -419,8 +437,10 @@ def _build_profile_summary(
                         "mean_test_relative",
                         "robust_min_test_relative",
                         "mean_turnover",
+                        "mean_executed_step_rate",
                         "worst_daily_relative_return",
                         "worst_max_relative_drawdown",
+                        "path_bootstrap_robust_min_test_relative_p05",
                         "overall_gate_passed",
                         "wealth_first_score",
                     ]
@@ -437,11 +457,18 @@ def _gate_slacks(profile_row: dict[str, Any], gates: dict[str, float]) -> dict[s
         "tail_worst_decile": float(profile_row["worst_decile_test_relative"] - gates["tail_worst_decile_threshold"]),
         "robust_min": float(profile_row["worst_robust_min"] - gates["robust_min_threshold"]),
         "mean_turnover": float(gates["max_mean_turnover"] - profile_row["mean_turnover"]),
+        "mean_executed_step_rate": float(
+            profile_row["mean_executed_step_rate"] - gates["min_mean_executed_step_rate"]
+        ),
         "worst_daily_relative": float(
             profile_row["worst_daily_relative_return"] - gates["min_worst_daily_relative_return"]
         ),
         "worst_relative_drawdown": float(
             gates["max_worst_relative_drawdown"] - profile_row["worst_relative_drawdown"]
+        ),
+        "path_bootstrap_robust_min_p05": float(
+            profile_row["mean_path_bootstrap_robust_min_p05"]
+            - gates["min_path_bootstrap_robust_min_p05"]
         ),
     }
 
@@ -463,8 +490,10 @@ def _build_frontier_report(
             "max_tail_worst_decile_threshold": float(row["worst_decile_test_relative"]),
             "max_robust_min_threshold": float(row["worst_robust_min"]),
             "min_max_mean_turnover_threshold": float(row["mean_turnover"]),
+            "max_min_mean_executed_step_rate_threshold": float(row["mean_executed_step_rate"]),
             "max_min_worst_daily_relative_return_threshold": float(row["worst_daily_relative_return"]),
             "min_max_worst_relative_drawdown_threshold": float(row["worst_relative_drawdown"]),
+            "max_min_path_bootstrap_robust_min_p05_threshold": float(row["mean_path_bootstrap_robust_min_p05"]),
         }
 
     target_profiles = [name for name in [best_profile, "promoted_tanh"] if name in by_profile]
@@ -482,8 +511,12 @@ def _build_frontier_report(
                 "tail_worst_decile_threshold": float(row["worst_decile_test_relative"] + epsilon),
                 "robust_min_threshold": float(row["worst_robust_min"] + epsilon),
                 "max_mean_turnover": float(max(row["mean_turnover"] - epsilon, 0.0)),
+                "min_mean_executed_step_rate": float(row["mean_executed_step_rate"] + epsilon),
                 "min_worst_daily_relative_return": float(row["worst_daily_relative_return"] + epsilon),
                 "max_worst_relative_drawdown": float(max(row["worst_relative_drawdown"] - epsilon, 0.0)),
+                "min_path_bootstrap_robust_min_p05": float(
+                    row["mean_path_bootstrap_robust_min_p05"] + epsilon
+                ),
             },
         }
 
@@ -503,6 +536,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-mean-turnover", type=float, default=0.0015)
     parser.add_argument("--min-worst-daily-relative-return", type=float, default=-0.010)
     parser.add_argument("--max-worst-relative-drawdown", type=float, default=0.030)
+    parser.add_argument("--min-mean-executed-step-rate", type=float, default=0.0)
+    parser.add_argument("--min-path-bootstrap-robust-min-p05", type=float, default=-1.0)
     parser.add_argument("--bootstrap-reps", type=int, default=400)
     parser.add_argument("--bootstrap-seed", type=int, default=12345)
     parser.add_argument("--path-bootstrap-reps", type=int, default=0)
@@ -561,6 +596,8 @@ def main(argv: list[str] | None = None) -> int:
         max_mean_turnover=float(args.max_mean_turnover),
         min_worst_daily_relative_return=float(args.min_worst_daily_relative_return),
         max_worst_relative_drawdown=float(args.max_worst_relative_drawdown),
+        min_mean_executed_step_rate=float(args.min_mean_executed_step_rate),
+        min_path_bootstrap_robust_min_p05=float(args.min_path_bootstrap_robust_min_p05),
         bootstrap_reps=int(args.bootstrap_reps),
         bootstrap_seed=int(args.bootstrap_seed),
     )
@@ -590,6 +627,8 @@ def main(argv: list[str] | None = None) -> int:
             "max_mean_turnover": float(args.max_mean_turnover),
             "min_worst_daily_relative_return": float(args.min_worst_daily_relative_return),
             "max_worst_relative_drawdown": float(args.max_worst_relative_drawdown),
+            "min_mean_executed_step_rate": float(args.min_mean_executed_step_rate),
+            "min_path_bootstrap_robust_min_p05": float(args.min_path_bootstrap_robust_min_p05),
         },
         "bootstrap": {
             "reps": int(args.bootstrap_reps),
@@ -608,6 +647,8 @@ def main(argv: list[str] | None = None) -> int:
                 "max_mean_turnover": float(args.max_mean_turnover),
                 "min_worst_daily_relative_return": float(args.min_worst_daily_relative_return),
                 "max_worst_relative_drawdown": float(args.max_worst_relative_drawdown),
+                "min_mean_executed_step_rate": float(args.min_mean_executed_step_rate),
+                "min_path_bootstrap_robust_min_p05": float(args.min_path_bootstrap_robust_min_p05),
             },
             best_profile=best_profile,
         ),
