@@ -383,6 +383,67 @@ def _build_profile_summary(
     return rows
 
 
+def _gate_slacks(profile_row: dict[str, Any], gates: dict[str, float]) -> dict[str, float]:
+    return {
+        "tail_worst_decile": float(profile_row["worst_decile_test_relative"] - gates["tail_worst_decile_threshold"]),
+        "robust_min": float(profile_row["worst_robust_min"] - gates["robust_min_threshold"]),
+        "mean_turnover": float(gates["max_mean_turnover"] - profile_row["mean_turnover"]),
+        "worst_daily_relative": float(
+            profile_row["worst_daily_relative_return"] - gates["min_worst_daily_relative_return"]
+        ),
+        "worst_relative_drawdown": float(
+            gates["max_worst_relative_drawdown"] - profile_row["worst_relative_drawdown"]
+        ),
+    }
+
+
+def _build_frontier_report(
+    profile_summary: list[dict[str, Any]],
+    gates: dict[str, float],
+    best_profile: str | None,
+) -> dict[str, Any]:
+    if not profile_summary:
+        return {}
+
+    epsilon = 1e-6
+    by_profile = {row["profile"]: row for row in profile_summary}
+
+    profile_gate_limits: dict[str, dict[str, float]] = {}
+    for profile_name, row in by_profile.items():
+        profile_gate_limits[profile_name] = {
+            "max_tail_worst_decile_threshold": float(row["worst_decile_test_relative"]),
+            "max_robust_min_threshold": float(row["worst_robust_min"]),
+            "min_max_mean_turnover_threshold": float(row["mean_turnover"]),
+            "max_min_worst_daily_relative_return_threshold": float(row["worst_daily_relative_return"]),
+            "min_max_worst_relative_drawdown_threshold": float(row["worst_relative_drawdown"]),
+        }
+
+    target_profiles = [name for name in [best_profile, "promoted_tanh"] if name in by_profile]
+    profile_flip_analysis: dict[str, Any] = {}
+    for profile_name in dict.fromkeys(target_profiles):
+        row = by_profile[profile_name]
+        slacks = _gate_slacks(row, gates)
+        binding_gate, binding_slack = min(slacks.items(), key=lambda kv: kv[1])
+        profile_flip_analysis[profile_name] = {
+            "currently_eligible": bool(row["eligible"]),
+            "gate_slacks": slacks,
+            "binding_gate": binding_gate,
+            "binding_slack": float(binding_slack),
+            "just_fail_threshold_examples": {
+                "tail_worst_decile_threshold": float(row["worst_decile_test_relative"] + epsilon),
+                "robust_min_threshold": float(row["worst_robust_min"] + epsilon),
+                "max_mean_turnover": float(max(row["mean_turnover"] - epsilon, 0.0)),
+                "min_worst_daily_relative_return": float(row["worst_daily_relative_return"] + epsilon),
+                "max_worst_relative_drawdown": float(max(row["worst_relative_drawdown"] - epsilon, 0.0)),
+            },
+        }
+
+    return {
+        "profile_gate_limits": profile_gate_limits,
+        "profile_flip_analysis": profile_flip_analysis,
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run phase-2 wealth-first stress sweep for main4.")
     parser.add_argument("--mode", choices=["quick", "full"], default="quick")
@@ -475,6 +536,17 @@ def main(argv: list[str] | None = None) -> int:
             "reps": int(args.bootstrap_reps),
             "seed": int(args.bootstrap_seed),
         },
+        "frontier_report": _build_frontier_report(
+            profile_summary=profile_summary,
+            gates={
+                "tail_worst_decile_threshold": float(args.tail_worst_decile_threshold),
+                "robust_min_threshold": float(args.robust_min_threshold),
+                "max_mean_turnover": float(args.max_mean_turnover),
+                "min_worst_daily_relative_return": float(args.min_worst_daily_relative_return),
+                "max_worst_relative_drawdown": float(args.max_worst_relative_drawdown),
+            },
+            best_profile=best_profile,
+        ),
         "profile_ranking": profile_summary,
         "warnings": warnings,
     }
