@@ -38,6 +38,59 @@ class Main4Config:
     medium_capacity_cfg: MediumCapacityConfig = MediumCapacityConfig()
 
 
+def _evaluate_gate_checks(
+    cfg: Main4Config,
+    mean_validation_relative: float,
+    robust_min_test_relative: float,
+    active_fraction: float,
+) -> dict[str, Any]:
+    """Evaluate promotion gates for the current run."""
+    validation_ok = mean_validation_relative >= cfg.min_validation_threshold
+    robust_min_ok = robust_min_test_relative >= cfg.min_robust_min_relative
+    active_fraction_ok = active_fraction >= cfg.min_active_fraction
+    return {
+        "validation_threshold": {
+            "passed": bool(validation_ok),
+            "value": float(mean_validation_relative),
+            "threshold": float(cfg.min_validation_threshold),
+        },
+        "robust_min_threshold": {
+            "passed": bool(robust_min_ok),
+            "value": float(robust_min_test_relative),
+            "threshold": float(cfg.min_robust_min_relative),
+        },
+        "active_fraction_threshold": {
+            "passed": bool(active_fraction_ok),
+            "value": float(active_fraction),
+            "threshold": float(cfg.min_active_fraction),
+        },
+        "overall_passed": bool(validation_ok and robust_min_ok and active_fraction_ok),
+    }
+
+
+def _resolve_validation_threshold(
+    gate: str,
+    min_validation_threshold: float | None,
+    gate_scale: str,
+) -> tuple[float, str]:
+    """Resolve the effective validation threshold and its source.
+
+    Threshold precedence:
+      1) Explicit min_validation_threshold override
+      2) Gate code converted by gate_scale
+    """
+    if min_validation_threshold is not None:
+        return float(min_validation_threshold), "explicit"
+
+    gate_value = float(gate)
+    if gate_scale == "bps":
+        return gate_value / 10_000.0, "gate_bps"
+    if gate_scale == "legacy":
+        return gate_value / 1_000.0, "gate_legacy"
+
+    raise ValueError(f"Unsupported gate_scale: {gate_scale}")
+
+
 def _compute_fingerprint() -> dict[str, str]:
     """Return git, version, and code fingerprint."""
     fingerprint = {}
@@ -125,7 +178,7 @@ def _train_policy(
                 cfg=cfg.medium_capacity_cfg,
                 seed=seed,
             )
-            test_total_return, test_relative_return, test_weight, test_turnover = simulate_medium_capacity_policy(
+            test_total_return, test_relative_return, test_weight, test_turnover, test_diag = simulate_medium_capacity_policy(
                 features=features_df,
                 spy_returns=spy_returns,
                 start_index=test_start,
@@ -158,6 +211,17 @@ def _train_policy(
                     "active": active,
                     "signal_scale": diag["signal_scale"],
                     "signal_bias": diag["signal_bias"],
+                    "validation_signal_abs_p95": diag["validation_signal_abs_p95"],
+                    "validation_proposed_step_p95": diag["validation_proposed_step_p95"],
+                    "validation_proposed_steps_over_band": diag["validation_proposed_steps_over_band"],
+                    "validation_gate_suppressed_step_count": diag["validation_gate_suppressed_step_count"],
+                    "validation_gate_suppression_rate": diag["validation_gate_suppression_rate"],
+                    "test_signal_abs_p95": test_diag["signal_abs_p95"],
+                    "test_proposed_step_p95": test_diag["proposed_step_p95"],
+                    "test_proposed_steps_over_band": test_diag["proposed_steps_over_band"],
+                    "test_executed_step_count": test_diag["executed_step_count"],
+                    "test_gate_suppressed_step_count": test_diag["gate_suppressed_step_count"],
+                    "test_gate_suppression_rate": test_diag["gate_suppression_rate"],
                 }
             )
         except Exception as e:
@@ -185,6 +249,11 @@ def main(
     ridge_l2: float = 1.0,
     action_smoothing: float = 0.5,
     no_trade_band: float = 0.02,
+    min_validation_threshold: float | None = None,
+    min_robust_min_relative: float = -0.01,
+    min_active_fraction: float = 0.01,
+    gate_scale: str = "bps",
+    fail_on_gate: bool = True,
 ) -> int:
     """Run main4 orchestrator."""
     os.makedirs(output_dir, exist_ok=True)
@@ -207,10 +276,24 @@ def main(
         no_trade_band=no_trade_band,
     )
 
+    resolved_validation_threshold, threshold_source = _resolve_validation_threshold(
+        gate=gate,
+        min_validation_threshold=min_validation_threshold,
+        gate_scale=gate_scale,
+    )
+
     cfg = Main4Config(
-        min_validation_threshold=float(gate) / 1000.0,
+        min_validation_threshold=resolved_validation_threshold,
+        min_robust_min_relative=min_robust_min_relative,
+        min_active_fraction=min_active_fraction,
         n_folds=n_folds,
         medium_capacity_cfg=medium_cfg,
+    )
+
+    print(
+        f"Validation threshold: {resolved_validation_threshold:.6f} "
+        f"(source={threshold_source}, gate={gate}, gate_scale={gate_scale})",
+        file=sys.stderr,
     )
 
     print(f"Training medium-capacity policy with {n_folds} folds...", file=sys.stderr)
@@ -224,6 +307,9 @@ def main(
         active_fraction = summary_df["active"].mean()
         mean_turnover = summary_df["mean_turnover"].mean()
         robust_min = summary_df["policy_relative_total_return"].min()
+        mean_validation_gate_suppression = summary_df["validation_gate_suppression_rate"].mean()
+        mean_test_gate_suppression = summary_df["test_gate_suppression_rate"].mean()
+        mean_test_executed_steps = summary_df["test_executed_step_count"].mean()
     else:
         mean_test_relative = 0.0
         mean_validation = 0.0
@@ -231,6 +317,16 @@ def main(
         active_fraction = 0.0
         mean_turnover = 0.0
         robust_min = 0.0
+        mean_validation_gate_suppression = 0.0
+        mean_test_gate_suppression = 0.0
+        mean_test_executed_steps = 0.0
+
+    gate_checks = _evaluate_gate_checks(
+        cfg=cfg,
+        mean_validation_relative=float(mean_validation),
+        robust_min_test_relative=float(robust_min),
+        active_fraction=float(active_fraction),
+    )
 
     # Collect fingerprint
     fingerprint = _compute_fingerprint()
@@ -252,7 +348,11 @@ def main(
             "active_fraction": float(active_fraction),
             "mean_turnover": float(mean_turnover),
             "robust_min_test_relative": float(robust_min),
+            "mean_validation_gate_suppression_rate": float(mean_validation_gate_suppression),
+            "mean_test_gate_suppression_rate": float(mean_test_gate_suppression),
+            "mean_test_executed_step_count": float(mean_test_executed_steps),
         },
+        "gate_checks": gate_checks,
     }
 
     output_json = os.path.join(output_dir, f"main4_gate{gate}_f{n_folds}_s{seed}_detailed.json")
@@ -268,7 +368,33 @@ def main(
     print(f"Mean validation relative return: {mean_validation:.6f}", file=sys.stderr)
     print(f"Beat hold: {beat_hold:.1%}", file=sys.stderr)
     print(f"Active fraction: {active_fraction:.1%}, Mean turnover: {mean_turnover:.6f}", file=sys.stderr)
+    print(
+        f"Validation gate suppression: {mean_validation_gate_suppression:.1%}, "
+        f"Test gate suppression: {mean_test_gate_suppression:.1%}, "
+        f"Mean executed steps: {mean_test_executed_steps:.2f}",
+        file=sys.stderr,
+    )
     print(f"Robust min: {robust_min:.6f}", file=sys.stderr)
+
+    overall_passed = bool(gate_checks["overall_passed"])
+    print(f"Gate checks passed: {overall_passed}", file=sys.stderr)
+    if not overall_passed:
+        print(
+            "Gate detail: "
+            f"validation={gate_checks['validation_threshold']['passed']} "
+            f"(value={gate_checks['validation_threshold']['value']:.6f}, "
+            f"threshold={gate_checks['validation_threshold']['threshold']:.6f}), "
+            f"robust_min={gate_checks['robust_min_threshold']['passed']} "
+            f"(value={gate_checks['robust_min_threshold']['value']:.6f}, "
+            f"threshold={gate_checks['robust_min_threshold']['threshold']:.6f}), "
+            f"active_fraction={gate_checks['active_fraction_threshold']['passed']} "
+            f"(value={gate_checks['active_fraction_threshold']['value']:.6f}, "
+            f"threshold={gate_checks['active_fraction_threshold']['threshold']:.6f})",
+            file=sys.stderr,
+        )
+        if fail_on_gate:
+            print("Run failed gate checks.", file=sys.stderr)
+            return 2
 
     return 0
 
@@ -289,6 +415,36 @@ if __name__ == "__main__":
     parser.add_argument("--ridge-l2", type=float, default=1.0)
     parser.add_argument("--action-smoothing", type=float, default=0.5)
     parser.add_argument("--no-trade-band", type=float, default=0.02)
+    parser.add_argument(
+        "--min-validation-threshold",
+        type=float,
+        default=None,
+        help="Optional explicit validation threshold override for gate checks.",
+    )
+    parser.add_argument(
+        "--min-robust-min-relative",
+        type=float,
+        default=-0.01,
+        help="Minimum acceptable worst-fold relative test return.",
+    )
+    parser.add_argument(
+        "--min-active-fraction",
+        type=float,
+        default=0.01,
+        help="Minimum acceptable fraction of active folds.",
+    )
+    parser.add_argument(
+        "--gate-scale",
+        type=str,
+        choices=["bps", "legacy"],
+        default="bps",
+        help="How to convert --gate into a validation threshold when no explicit override is provided.",
+    )
+    parser.add_argument(
+        "--no-fail-on-gate",
+        action="store_true",
+        help="Do not fail process exit code when gate checks fail.",
+    )
     args = parser.parse_args()
 
     exit_code = main(
@@ -304,5 +460,10 @@ if __name__ == "__main__":
         ridge_l2=args.ridge_l2,
         action_smoothing=args.action_smoothing,
         no_trade_band=args.no_trade_band,
+        min_validation_threshold=args.min_validation_threshold,
+        min_robust_min_relative=args.min_robust_min_relative,
+        min_active_fraction=args.min_active_fraction,
+        gate_scale=args.gate_scale,
+        fail_on_gate=not args.no_fail_on_gate,
     )
     sys.exit(exit_code)

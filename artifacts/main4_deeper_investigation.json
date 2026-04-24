@@ -1,0 +1,492 @@
+{
+  "friction_stress": [
+    {
+      "candidate": "best_by_robust",
+      "band": 0.015,
+      "smoothing": 1.0,
+      "tx_bps": 5,
+      "slippage_bps": 5,
+      "all_passed": true,
+      "mean_test_rel_avg": 0.008879158089199072,
+      "robust_min_rel_avg": 0.008401903851468662,
+      "seed_rows": [
+        {
+          "seed": 5,
+          "exit_code": 0,
+          "passed": true,
+          "mean_test_rel": 0.008879158089199072,
+          "mean_val_rel": 0.006082284018484281,
+          "robust_min_rel": 0.008401903851468662,
+          "mean_turnover": 0.0006719874280979518
+        },
+        {
+          "seed": 10,
+          "exit_code": 0,
+          "passed": true,
+          "mean_test_rel": 0.008879158089199072,
+          "mean_val_rel": 0.006082284018484281,
+          "robust_min_rel": 0.008401903851468662,
+          "mean_turnover": 0.0006719874280979518
+        }
+      ]
+    },
+    {
+      "candidate": "best_by_robust",
+      "band": 0.015,
+      "smoothing": 1.0,
+      "tx_bps": 10,
+      "slippage_bps": 10,
+      "all_passed": true,
+      "mean_test_rel_avg": 0.008563872381437113,
+      "robust_min_rel_avg": 0.008090127757297338,
+      "seed_rows": [
+        {
+          "seed": 5,
+          "exit_code": 0,
+          "passed": true,
+          "mean_test_rel": 0.008563872381437113,
+          "mean_val_rel": 0.005507505886601205,
+          "robust_min_rel": 0.008090127757297338,
+          "mean_turnover": 0.0006719874280979518
+        },
+        {
+          "seed": 10,
+          "exit_code": 0,
+          "passed": true,
+          "mean_test_rel": 0.008563872381437113,
+          "mean_val_rel": 0.005507505886601205,
+          "robust_min_rel": 0.008090127757297338,
+          "mean_turnover": 0.0006719874280979518
+        }
+      ]
+    },
+    {
+      "candidate": "best_by_robust",
+      "band": 0.015,
+      "smoothing": 1.0,
+      "tx_bps": 20,
+      "slippage_bps": 20,
+      "all_passed": true,
+      "mean_test_rel_avg": 0.007495543764256245,
+      "robust_min_rel_avg": 0.006648410331362431,
+      "seed_rows": [
+        {
+          "seed": 5,
+          "exit_code": 0,
+          "passed": true,
+          "mean_test_rel": 0.007495543764256245,
+          "mean_val_rel": 0.004475348229241079,
+          "robust_min_rel": 0.006648410331362431,
+          "mean_turnover": 0.0005377591117226744
+        },
+        {
+          "seed": 10,
+          "exit_code": 0,
+          "passed": true,
+          "mean_test_rel": 0.007495543764256245,
+          "mean_val_rel": 0.004475348229241079,
+          "robust_min_rel": 0.006648410331362431,
+          "mean_turnover": 0.0005377591117226744
+        }
+      ]
+    },
+    {
+      "candidate": "best_by_robust",
+      "band": 0.015,
+      "smoothing": 1.0,
+      "tx_bps": 30,
+      "slippage_bps": 30,
+      "all_passed": true,
+      "mean_test_rel_avg": 0.0025936717003852325,
+      "robust_min_rel_avg": -0.005474182808751893,
+      "seed_rows": [
+        {
+          "seed": 5,
+          "exit_code": 0,
+          "passed": true,
+          "mean_test_rel": 0.0025936717003852325,
+          "mean_val_rel": 0.0035441946929199255,
+          "robust_min_rel": -0.005474182808751893,
+          "mean_turnover": 0.00033982172421450637
+        },
+        {
+          "seed": 10,
+          "exit_code": 0,
+          "passed": true,
+          "mean_test_rel": 0.0025936717003852325,
+          "mean_val_rel": 0.0035441946929199255,
+          "robust_min_rel": -0.005474182808751893,
+          "mean_turnover": 0.00033982172421450637
+        }
+      ]
+    },
+    {
+      "candidate": "best_by_test",
+      "band": 0.005,
+      "smoothing": 0.5,
+      "tx_bps": 5,
+      "slippage_bps": 5,
+      "all_passed": true,
+      "mean_test_rel_avg": 0.009368774849646563,
+      "robust_min_rel_avg": 0.007474308531074447,
+      "seed_rows": [
+        {
+          "seed": 5,
+          "exit_code": 0,
+          "passed": true,
+          "mean_test_rel": 0.009368774849646563,
+          "mean_val_rel": 0.00507771280837536,
+          "robust_min_rel": 0.007474308531074447,
+          "mean_turnover": 0.0007792209820708345
+        },
+        {
+          "seed": 10,
+          "exit_code": 0,
+          "passed": true,
+          "mean_test_rel": 0.009368774849646563,
+          "mean_val_rel": 0.00507771280837536,
+          "robust_min_rel": 0.007474308531074447,
+          "mean_turnover": 0.0007792209820708345
+        }
+      ]
+    },
+    {
+      "candidate": "best_by_test",
+      "band": 0.005,
+      "smoothing": 0.5,
+      "tx_bps": 10,
+      "slippage_bps": 10,
+      "all_passed": true,
+      "mean_test_rel_avg": 0.009003497133427333,
+      "robust_min_rel_avg": 0.007068871337706284,
+      "seed_rows": [
+        {
+          "seed": 5,
+          "exit_code": 0,
+          "passed": true,
+          "mean_test_rel": 0.009003497133427333,
+          "mean_val_rel": 0.0044689909329335515,
+          "robust_min_rel": 0.007068871337706284,
+          "mean_turnover": 0.0007792209820708345
+        },
+        {
+          "seed": 10,
+          "exit_code": 0,
+          "passed": true,
+          "mean_test_rel": 0.009003497133427333,
+          "mean_val_rel": 0.0044689909329335515,
+          "robust_min_rel": 0.007068871337706284,
+          "mean_turnover": 0.0007792209820708345
+        }
+      ]
+    },
+    {
+      "candidate": "best_by_test",
+      "band": 0.005,
+      "smoothing": 0.5,
+      "tx_bps": 20,
+      "slippage_bps": 20,
+      "all_passed": true,
+      "mean_test_rel_avg": 0.005662587850047214,
+      "robust_min_rel_avg": -0.0015737882246360524,
+      "seed_rows": [
+        {
+          "seed": 5,
+          "exit_code": 0,
+          "passed": true,
+          "mean_test_rel": 0.005662587850047214,
+          "mean_val_rel": 0.0034685167220303756,
+          "robust_min_rel": -0.0015737882246360524,
+          "mean_turnover": 0.0005123329868413918
+        },
+        {
+          "seed": 10,
+          "exit_code": 0,
+          "passed": true,
+          "mean_test_rel": 0.005662587850047214,
+          "mean_val_rel": 0.0034685167220303756,
+          "robust_min_rel": -0.0015737882246360524,
+          "mean_turnover": 0.0005123329868413918
+        }
+      ]
+    },
+    {
+      "candidate": "best_by_test",
+      "band": 0.005,
+      "smoothing": 0.5,
+      "tx_bps": 30,
+      "slippage_bps": 30,
+      "all_passed": true,
+      "mean_test_rel_avg": 0.005182548099667487,
+      "robust_min_rel_avg": -0.001634803443146926,
+      "seed_rows": [
+        {
+          "seed": 5,
+          "exit_code": 0,
+          "passed": true,
+          "mean_test_rel": 0.005182548099667487,
+          "mean_val_rel": 0.002632196088675339,
+          "robust_min_rel": -0.001634803443146926,
+          "mean_turnover": 0.0005123329868413918
+        },
+        {
+          "seed": 10,
+          "exit_code": 0,
+          "passed": true,
+          "mean_test_rel": 0.005182548099667487,
+          "mean_val_rel": 0.002632196088675339,
+          "robust_min_rel": -0.001634803443146926,
+          "mean_turnover": 0.0005123329868413918
+        }
+      ]
+    }
+  ],
+  "gate_sensitivity": [
+    {
+      "candidate": "best_by_robust",
+      "band": 0.015,
+      "smoothing": 1.0,
+      "gate": "009",
+      "all_passed": true,
+      "mean_val_rel_avg": 0.006082284018484281,
+      "mean_test_rel_avg": 0.008879158089199072,
+      "robust_min_rel_avg": 0.008401903851468662,
+      "seed_rows": [
+        {
+          "seed": 5,
+          "exit_code": 0,
+          "passed": true,
+          "mean_val_rel": 0.006082284018484281,
+          "mean_test_rel": 0.008879158089199072,
+          "robust_min_rel": 0.008401903851468662,
+          "threshold": 0.0009
+        },
+        {
+          "seed": 10,
+          "exit_code": 0,
+          "passed": true,
+          "mean_val_rel": 0.006082284018484281,
+          "mean_test_rel": 0.008879158089199072,
+          "robust_min_rel": 0.008401903851468662,
+          "threshold": 0.0009
+        }
+      ]
+    },
+    {
+      "candidate": "best_by_robust",
+      "band": 0.015,
+      "smoothing": 1.0,
+      "gate": "012",
+      "all_passed": true,
+      "mean_val_rel_avg": 0.006082284018484281,
+      "mean_test_rel_avg": 0.008879158089199072,
+      "robust_min_rel_avg": 0.008401903851468662,
+      "seed_rows": [
+        {
+          "seed": 5,
+          "exit_code": 0,
+          "passed": true,
+          "mean_val_rel": 0.006082284018484281,
+          "mean_test_rel": 0.008879158089199072,
+          "robust_min_rel": 0.008401903851468662,
+          "threshold": 0.0012
+        },
+        {
+          "seed": 10,
+          "exit_code": 0,
+          "passed": true,
+          "mean_val_rel": 0.006082284018484281,
+          "mean_test_rel": 0.008879158089199072,
+          "robust_min_rel": 0.008401903851468662,
+          "threshold": 0.0012
+        }
+      ]
+    },
+    {
+      "candidate": "best_by_robust",
+      "band": 0.015,
+      "smoothing": 1.0,
+      "gate": "015",
+      "all_passed": true,
+      "mean_val_rel_avg": 0.006082284018484281,
+      "mean_test_rel_avg": 0.008879158089199072,
+      "robust_min_rel_avg": 0.008401903851468662,
+      "seed_rows": [
+        {
+          "seed": 5,
+          "exit_code": 0,
+          "passed": true,
+          "mean_val_rel": 0.006082284018484281,
+          "mean_test_rel": 0.008879158089199072,
+          "robust_min_rel": 0.008401903851468662,
+          "threshold": 0.0015
+        },
+        {
+          "seed": 10,
+          "exit_code": 0,
+          "passed": true,
+          "mean_val_rel": 0.006082284018484281,
+          "mean_test_rel": 0.008879158089199072,
+          "robust_min_rel": 0.008401903851468662,
+          "threshold": 0.0015
+        }
+      ]
+    },
+    {
+      "candidate": "best_by_robust",
+      "band": 0.015,
+      "smoothing": 1.0,
+      "gate": "020",
+      "all_passed": true,
+      "mean_val_rel_avg": 0.006082284018484281,
+      "mean_test_rel_avg": 0.008879158089199072,
+      "robust_min_rel_avg": 0.008401903851468662,
+      "seed_rows": [
+        {
+          "seed": 5,
+          "exit_code": 0,
+          "passed": true,
+          "mean_val_rel": 0.006082284018484281,
+          "mean_test_rel": 0.008879158089199072,
+          "robust_min_rel": 0.008401903851468662,
+          "threshold": 0.002
+        },
+        {
+          "seed": 10,
+          "exit_code": 0,
+          "passed": true,
+          "mean_val_rel": 0.006082284018484281,
+          "mean_test_rel": 0.008879158089199072,
+          "robust_min_rel": 0.008401903851468662,
+          "threshold": 0.002
+        }
+      ]
+    },
+    {
+      "candidate": "best_by_test",
+      "band": 0.005,
+      "smoothing": 0.5,
+      "gate": "009",
+      "all_passed": true,
+      "mean_val_rel_avg": 0.00507771280837536,
+      "mean_test_rel_avg": 0.009368774849646563,
+      "robust_min_rel_avg": 0.007474308531074447,
+      "seed_rows": [
+        {
+          "seed": 5,
+          "exit_code": 0,
+          "passed": true,
+          "mean_val_rel": 0.00507771280837536,
+          "mean_test_rel": 0.009368774849646563,
+          "robust_min_rel": 0.007474308531074447,
+          "threshold": 0.0009
+        },
+        {
+          "seed": 10,
+          "exit_code": 0,
+          "passed": true,
+          "mean_val_rel": 0.00507771280837536,
+          "mean_test_rel": 0.009368774849646563,
+          "robust_min_rel": 0.007474308531074447,
+          "threshold": 0.0009
+        }
+      ]
+    },
+    {
+      "candidate": "best_by_test",
+      "band": 0.005,
+      "smoothing": 0.5,
+      "gate": "012",
+      "all_passed": true,
+      "mean_val_rel_avg": 0.00507771280837536,
+      "mean_test_rel_avg": 0.009368774849646563,
+      "robust_min_rel_avg": 0.007474308531074447,
+      "seed_rows": [
+        {
+          "seed": 5,
+          "exit_code": 0,
+          "passed": true,
+          "mean_val_rel": 0.00507771280837536,
+          "mean_test_rel": 0.009368774849646563,
+          "robust_min_rel": 0.007474308531074447,
+          "threshold": 0.0012
+        },
+        {
+          "seed": 10,
+          "exit_code": 0,
+          "passed": true,
+          "mean_val_rel": 0.00507771280837536,
+          "mean_test_rel": 0.009368774849646563,
+          "robust_min_rel": 0.007474308531074447,
+          "threshold": 0.0012
+        }
+      ]
+    },
+    {
+      "candidate": "best_by_test",
+      "band": 0.005,
+      "smoothing": 0.5,
+      "gate": "015",
+      "all_passed": true,
+      "mean_val_rel_avg": 0.00507771280837536,
+      "mean_test_rel_avg": 0.009368774849646563,
+      "robust_min_rel_avg": 0.007474308531074447,
+      "seed_rows": [
+        {
+          "seed": 5,
+          "exit_code": 0,
+          "passed": true,
+          "mean_val_rel": 0.00507771280837536,
+          "mean_test_rel": 0.009368774849646563,
+          "robust_min_rel": 0.007474308531074447,
+          "threshold": 0.0015
+        },
+        {
+          "seed": 10,
+          "exit_code": 0,
+          "passed": true,
+          "mean_val_rel": 0.00507771280837536,
+          "mean_test_rel": 0.009368774849646563,
+          "robust_min_rel": 0.007474308531074447,
+          "threshold": 0.0015
+        }
+      ]
+    },
+    {
+      "candidate": "best_by_test",
+      "band": 0.005,
+      "smoothing": 0.5,
+      "gate": "020",
+      "all_passed": true,
+      "mean_val_rel_avg": 0.00507771280837536,
+      "mean_test_rel_avg": 0.009368774849646563,
+      "robust_min_rel_avg": 0.007474308531074447,
+      "seed_rows": [
+        {
+          "seed": 5,
+          "exit_code": 0,
+          "passed": true,
+          "mean_val_rel": 0.00507771280837536,
+          "mean_test_rel": 0.009368774849646563,
+          "robust_min_rel": 0.007474308531074447,
+          "threshold": 0.002
+        },
+        {
+          "seed": 10,
+          "exit_code": 0,
+          "passed": true,
+          "mean_val_rel": 0.00507771280837536,
+          "mean_test_rel": 0.009368774849646563,
+          "robust_min_rel": 0.007474308531074447,
+          "threshold": 0.002
+        }
+      ]
+    }
+  ],
+  "bootstrap_fold_confidence": {
+    "draws": 20000,
+    "p_robust_beats_test_on_mean": 0.29365,
+    "p_robust_beats_test_on_worst_fold": 0.96575,
+    "p_robust_wins_risk_first_rule": 0.96575
+  }
+}

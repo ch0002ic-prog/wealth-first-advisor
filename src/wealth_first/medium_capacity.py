@@ -88,6 +88,62 @@ def _standardize(x: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     return x_std, mu, std
 
 
+def _simulate_signal_path(
+    signal_clipped: np.ndarray,
+    window_returns: np.ndarray,
+    cfg: MediumCapacityConfig,
+    signal_scale: float,
+) -> dict[str, Any]:
+    """Project signal to weights and return performance plus gate diagnostics."""
+    target_weights = cfg.initial_spy_weight + signal_scale * signal_clipped
+    target_weights = np.clip(target_weights, cfg.min_spy_weight, cfg.max_spy_weight)
+
+    weights = np.empty_like(target_weights)
+    weights[0] = cfg.initial_spy_weight
+    proposed_steps = np.zeros_like(target_weights)
+    gate_suppressed = np.zeros_like(target_weights, dtype=bool)
+    for t in range(1, len(target_weights)):
+        raw_target_delta = target_weights[t] - weights[t - 1]
+        candidate_weight = weights[t - 1] + cfg.action_smoothing * raw_target_delta
+        proposed_steps[t] = abs(candidate_weight - weights[t - 1])
+        # Evaluate the deadband in target-weight space so smoothing does not
+        # implicitly widen the threshold by 1 / action_smoothing.
+        if abs(raw_target_delta) < cfg.no_trade_band:
+            gate_suppressed[t] = True
+            candidate_weight = weights[t - 1]
+        weights[t] = float(np.clip(candidate_weight, cfg.min_spy_weight, cfg.max_spy_weight))
+
+    turnovers = np.abs(np.diff(weights, prepend=weights[0]))
+    wealth = 1.0
+    spy_wealth = 1.0
+    for weight, turnover, ret in zip(weights, turnovers, window_returns, strict=False):
+        cost = turnover * (cfg.transaction_cost_bps + cfg.slippage_bps) / 10_000.0
+        wealth *= max(1.0 + weight * ret - cost, 1e-8)
+        spy_wealth *= 1.0 + ret
+
+    step_count = max(len(target_weights) - 1, 0)
+    signal_abs = np.abs(signal_clipped)
+    step_slice = proposed_steps[1:]
+    gate_slice = gate_suppressed[1:]
+    turnover_slice = turnovers[1:]
+    total_return = wealth - 1.0
+    relative_return = wealth / max(spy_wealth, 1e-8) - 1.0
+    return {
+        "total_return": float(total_return),
+        "relative_return": float(relative_return),
+        "average_weight": float(np.mean(weights)),
+        "average_turnover": float(np.mean(turnovers)),
+        "signal_abs_p95": float(np.quantile(signal_abs, 0.95)) if len(signal_abs) > 0 else 0.0,
+        "signal_abs_max": float(np.max(signal_abs)) if len(signal_abs) > 0 else 0.0,
+        "proposed_step_p95": float(np.quantile(step_slice, 0.95)) if step_count > 0 else 0.0,
+        "proposed_step_max": float(np.max(step_slice)) if step_count > 0 else 0.0,
+        "proposed_steps_over_band": int(np.sum(step_slice >= cfg.no_trade_band)) if step_count > 0 else 0,
+        "executed_step_count": int(np.sum(turnover_slice > 1e-12)) if step_count > 0 else 0,
+        "gate_suppressed_step_count": int(np.sum(gate_slice)) if step_count > 0 else 0,
+        "gate_suppression_rate": float(np.mean(gate_slice)) if step_count > 0 else 0.0,
+    }
+
+
 def train_medium_capacity_model(
     features: pd.DataFrame,
     spy_returns: pd.Series,
@@ -140,33 +196,24 @@ def train_medium_capacity_model(
     # Simple approach: find scale that maximizes validation return with actual weight clipping
     best_scale = 0.0
     best_val_return = float("-inf")
+    best_validation_result: dict[str, Any] | None = None
 
     for scale_candidate in np.linspace(-0.5, 0.5, 21):
-        target_weights = cfg.initial_spy_weight + scale_candidate * val_signal_clipped
-        target_weights = np.clip(target_weights, cfg.min_spy_weight, cfg.max_spy_weight)
-
-        # Simulate with action smoothing and no-trade band
-        weights = np.empty_like(target_weights)
-        weights[0] = cfg.initial_spy_weight
-        for t in range(1, len(target_weights)):
-            candidate_weight = weights[t - 1] + cfg.action_smoothing * (target_weights[t] - weights[t - 1])
-            if abs(candidate_weight - weights[t - 1]) < cfg.no_trade_band:
-                candidate_weight = weights[t - 1]
-            weights[t] = float(np.clip(candidate_weight, cfg.min_spy_weight, cfg.max_spy_weight))
-
-        turnovers = np.abs(np.diff(weights, prepend=weights[0]))
-        wealth = 1.0
-        spy_wealth = 1.0
-        for weight, turnover, ret in zip(weights, turnovers, val_returns, strict=False):
-            cost = turnover * (cfg.transaction_cost_bps + cfg.slippage_bps) / 10_000.0
-            wealth *= max(1.0 + weight * ret - cost, 1e-8)
-            spy_wealth *= 1.0 + ret
-        cumulative_return = wealth - 1.0
-        relative_return = wealth / max(spy_wealth, 1e-8) - 1.0
+        validation_result = _simulate_signal_path(
+            signal_clipped=val_signal_clipped,
+            window_returns=val_returns,
+            cfg=cfg,
+            signal_scale=float(scale_candidate),
+        )
+        relative_return = float(validation_result["relative_return"])
 
         if relative_return > best_val_return:
             best_val_return = relative_return
             best_scale = scale_candidate
+            best_validation_result = validation_result
+
+    if best_validation_result is None:
+        raise RuntimeError("Validation scale search did not produce a result.")
 
     params = MediumCapacityParams(
         signal_weights=signal_weights,
@@ -182,6 +229,14 @@ def train_medium_capacity_model(
         "signal_scale": float(best_scale),
         "val_cumulative_return": float(best_val_return),
         "signal_weights_l2": float(np.linalg.norm(signal_weights[1:])),
+        "validation_signal_abs_p95": float(best_validation_result["signal_abs_p95"]),
+        "validation_signal_abs_max": float(best_validation_result["signal_abs_max"]),
+        "validation_proposed_step_p95": float(best_validation_result["proposed_step_p95"]),
+        "validation_proposed_step_max": float(best_validation_result["proposed_step_max"]),
+        "validation_proposed_steps_over_band": int(best_validation_result["proposed_steps_over_band"]),
+        "validation_executed_step_count": int(best_validation_result["executed_step_count"]),
+        "validation_gate_suppressed_step_count": int(best_validation_result["gate_suppressed_step_count"]),
+        "validation_gate_suppression_rate": float(best_validation_result["gate_suppression_rate"]),
     }
 
     return params, diagnostics
@@ -196,11 +251,11 @@ def simulate_medium_capacity_policy(
     params: MediumCapacityParams,
     feature_mu: np.ndarray | None = None,
     feature_std: np.ndarray | None = None,
-) -> tuple[float, float, float, float]:
+) -> tuple[float, float, float, float, dict[str, Any]]:
     """Simulate the medium-capacity policy on a window.
 
     Returns:
-        total_return, relative_return, average_weight, average_turnover
+        total_return, relative_return, average_weight, average_turnover, diagnostics
     """
     window_features = features.iloc[start_index : end_index + 1].to_numpy(dtype=float)
     window_returns = spy_returns.iloc[start_index : end_index + 1].to_numpy(dtype=float)
@@ -214,29 +269,17 @@ def simulate_medium_capacity_policy(
     signal = X @ params.signal_weights
     signal_clipped = np.clip(signal, -1.0, 1.0)
 
-    # Map to target weight
-    target_weights = cfg.initial_spy_weight + params.signal_scale * signal_clipped
-    target_weights = np.clip(target_weights, cfg.min_spy_weight, cfg.max_spy_weight)
+    simulation_result = _simulate_signal_path(
+        signal_clipped=signal_clipped,
+        window_returns=window_returns,
+        cfg=cfg,
+        signal_scale=float(params.signal_scale),
+    )
 
-    # Apply action smoothing and no-trade band
-    weights = np.empty_like(target_weights)
-    weights[0] = cfg.initial_spy_weight
-    for t in range(1, len(target_weights)):
-        candidate_weight = weights[t - 1] + cfg.action_smoothing * (target_weights[t] - weights[t - 1])
-        if abs(candidate_weight - weights[t - 1]) < cfg.no_trade_band:
-            candidate_weight = weights[t - 1]
-        weights[t] = float(np.clip(candidate_weight, cfg.min_spy_weight, cfg.max_spy_weight))
-
-    turnovers = np.abs(np.diff(weights, prepend=weights[0]))
-    wealth = 1.0
-    spy_wealth = 1.0
-    for weight, turnover, ret in zip(weights, turnovers, window_returns, strict=False):
-        cost = turnover * (cfg.transaction_cost_bps + cfg.slippage_bps) / 10_000.0
-        wealth *= max(1.0 + weight * ret - cost, 1e-8)
-        spy_wealth *= 1.0 + ret
-    total_return = wealth - 1.0
-    relative_return = wealth / max(spy_wealth, 1e-8) - 1.0
-    average_weight = float(np.mean(weights))
-    average_turnover = float(np.mean(turnovers))
-
-    return float(total_return), float(relative_return), average_weight, average_turnover
+    return (
+        float(simulation_result["total_return"]),
+        float(simulation_result["relative_return"]),
+        float(simulation_result["average_weight"]),
+        float(simulation_result["average_turnover"]),
+        simulation_result,
+    )
