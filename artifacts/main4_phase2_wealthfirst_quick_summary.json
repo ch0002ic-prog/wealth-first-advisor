@@ -1,0 +1,227 @@
+{
+  "mode": "quick",
+  "n_cases": 16,
+  "best_profile": "promoted_tanh",
+  "eligibility_gates": {
+    "tail_worst_decile_threshold": 0.0,
+    "robust_min_threshold": 0.0,
+    "max_mean_turnover": 0.0015
+  },
+  "bootstrap": {
+    "reps": 400,
+    "seed": 12345
+  },
+  "profile_ranking": [
+    {
+      "profile": "promoted_tanh",
+      "n_cases": 8,
+      "pass_rate": 1.0,
+      "eligible": true,
+      "mean_score": 0.006165343487795677,
+      "mean_test_relative": 0.0055180276521617395,
+      "worst_robust_min": 0.0022639611509442936,
+      "worst_decile_test_relative": 0.004782633411009396,
+      "mean_turnover": 0.00112869300984156,
+      "mean_seed_std_test_relative": 0.0,
+      "max_seed_std_test_relative": 0.0,
+      "mean_seed_std_robust_min": 0.0,
+      "max_seed_std_robust_min": 0.0,
+      "mean_score_bootstrap_p05": 0.0056747035933936395,
+      "mean_score_bootstrap_p50": 0.006165343487795677,
+      "mean_score_bootstrap_p95": 0.006711319835370495,
+      "mean_test_relative_bootstrap_p05": 0.0051178021997208886,
+      "mean_test_relative_bootstrap_p50": 0.005505105134508692,
+      "mean_test_relative_bootstrap_p95": 0.005956918573778264,
+      "min_gate_margin": 0.0022639611509442936,
+      "stress_rows": [
+        {
+          "transaction_cost_bps": 12.0,
+          "slippage_bps": 12.0,
+          "seed": 5,
+          "mean_test_relative": 0.006692858974178195,
+          "robust_min_test_relative": 0.003661326711706714,
+          "mean_turnover": 0.0012193466966300562,
+          "overall_gate_passed": true,
+          "wealth_first_score": 0.0076090123075590104
+        },
+        {
+          "transaction_cost_bps": 12.0,
+          "slippage_bps": 12.0,
+          "seed": 17,
+          "mean_test_relative": 0.006692858974178195,
+          "robust_min_test_relative": 0.003661326711706714,
+          "mean_turnover": 0.0012193466966300562,
+          "overall_gate_passed": true,
+          "wealth_first_score": 0.0076090123075590104
+        },
+        {
+          "transaction_cost_bps": 18.0,
+          "slippage_bps": 18.0,
+          "seed": 5,
+          "mean_test_relative": 0.005504661059044569,
+          "robust_min_test_relative": 0.0030426861714873965,
+          "mean_turnover": 0.0010984751142453944,
+          "overall_gate_passed": true,
+          "wealth_first_score": 0.006202147809104221
+        },
+        {
+          "transaction_cost_bps": 18.0,
+          "slippage_bps": 18.0,
+          "seed": 17,
+          "mean_test_relative": 0.005504661059044569,
+          "robust_min_test_relative": 0.0030426861714873965,
+          "mean_turnover": 0.0010984751142453944,
+          "overall_gate_passed": true,
+          "wealth_first_score": 0.006202147809104221
+        },
+        {
+          "transaction_cost_bps": 22.0,
+          "slippage_bps": 22.0,
+          "seed": 5,
+          "mean_test_relative": 0.005091957164414795,
+          "robust_min_test_relative": 0.0029827107099824612,
+          "mean_turnover": 0.0010984751142453944,
+          "overall_gate_passed": true,
+          "wealth_first_score": 0.00575945618372198
+        },
+        {
+          "transaction_cost_bps": 22.0,
+          "slippage_bps": 22.0,
+          "seed": 17,
+          "mean_test_relative": 0.005091957164414795,
+          "robust_min_test_relative": 0.0029827107099824612,
+          "mean_turnover": 0.0010984751142453944,
+          "overall_gate_passed": true,
+          "wealth_first_score": 0.00575945618372198
+        },
+        {
+          "transaction_cost_bps": 25.0,
+          "slippage_bps": 25.0,
+          "seed": 5,
+          "mean_test_relative": 0.004782633411009396,
+          "robust_min_test_relative": 0.0022639611509442936,
+          "mean_turnover": 0.0010984751142453944,
+          "overall_gate_passed": true,
+          "wealth_first_score": 0.005090757650797497
+        },
+        {
+          "transaction_cost_bps": 25.0,
+          "slippage_bps": 25.0,
+          "seed": 17,
+          "mean_test_relative": 0.004782633411009396,
+          "robust_min_test_relative": 0.0022639611509442936,
+          "mean_turnover": 0.0010984751142453944,
+          "overall_gate_passed": true,
+          "wealth_first_score": 0.005090757650797497
+        }
+      ]
+    },
+    {
+      "profile": "turnover_guard",
+      "n_cases": 8,
+      "pass_rate": 1.0,
+      "eligible": true,
+      "mean_score": 0.004382366684566373,
+      "mean_test_relative": 0.0040807924842500955,
+      "worst_robust_min": 0.001170236950797765,
+      "worst_decile_test_relative": 0.0037782338684551496,
+      "mean_turnover": 0.0004907369022934887,
+      "mean_seed_std_test_relative": 0.0,
+      "max_seed_std_test_relative": 0.0,
+      "mean_seed_std_robust_min": 0.0,
+      "max_seed_std_robust_min": 0.0,
+      "mean_score_bootstrap_p05": 0.004210174474994253,
+      "mean_score_bootstrap_p50": 0.0043765996842397865,
+      "mean_score_bootstrap_p95": 0.0045604918362066585,
+      "mean_test_relative_bootstrap_p05": 0.0039257378593654845,
+      "mean_test_relative_bootstrap_p50": 0.004075322062652709,
+      "mean_test_relative_bootstrap_p95": 0.004237542213744954,
+      "min_gate_margin": 0.001170236950797765,
+      "stress_rows": [
+        {
+          "transaction_cost_bps": 12.0,
+          "slippage_bps": 12.0,
+          "seed": 5,
+          "mean_test_relative": 0.0045511591324049585,
+          "robust_min_test_relative": 0.0015372010510550371,
+          "mean_turnover": 0.0005545525258295274,
+          "overall_gate_passed": true,
+          "wealth_first_score": 0.004903845263560331
+        },
+        {
+          "transaction_cost_bps": 12.0,
+          "slippage_bps": 12.0,
+          "seed": 17,
+          "mean_test_relative": 0.0045511591324049585,
+          "robust_min_test_relative": 0.0015372010510550371,
+          "mean_turnover": 0.0005545525258295274,
+          "overall_gate_passed": true,
+          "wealth_first_score": 0.004903845263560331
+        },
+        {
+          "transaction_cost_bps": 18.0,
+          "slippage_bps": 18.0,
+          "seed": 5,
+          "mean_test_relative": 0.00408436112553483,
+          "robust_min_test_relative": 0.0013778874459153823,
+          "mean_turnover": 0.0004694650277814758,
+          "overall_gate_passed": true,
+          "wealth_first_score": 0.004421206077656414
+        },
+        {
+          "transaction_cost_bps": 18.0,
+          "slippage_bps": 18.0,
+          "seed": 17,
+          "mean_test_relative": 0.00408436112553483,
+          "robust_min_test_relative": 0.0013778874459153823,
+          "mean_turnover": 0.0004694650277814758,
+          "overall_gate_passed": true,
+          "wealth_first_score": 0.004421206077656414
+        },
+        {
+          "transaction_cost_bps": 22.0,
+          "slippage_bps": 22.0,
+          "seed": 5,
+          "mean_test_relative": 0.003909415810605443,
+          "robust_min_test_relative": 0.0012716895685229712,
+          "mean_turnover": 0.0004694650277814758,
+          "overall_gate_passed": true,
+          "wealth_first_score": 0.004193161824030822
+        },
+        {
+          "transaction_cost_bps": 22.0,
+          "slippage_bps": 22.0,
+          "seed": 17,
+          "mean_test_relative": 0.003909415810605443,
+          "robust_min_test_relative": 0.0012716895685229712,
+          "mean_turnover": 0.0004694650277814758,
+          "overall_gate_passed": true,
+          "wealth_first_score": 0.004193161824030822
+        },
+        {
+          "transaction_cost_bps": 25.0,
+          "slippage_bps": 25.0,
+          "seed": 5,
+          "mean_test_relative": 0.0037782338684551496,
+          "robust_min_test_relative": 0.001170236950797765,
+          "mean_turnover": 0.0004694650277814758,
+          "overall_gate_passed": true,
+          "wealth_first_score": 0.004011253573017925
+        },
+        {
+          "transaction_cost_bps": 25.0,
+          "slippage_bps": 25.0,
+          "seed": 17,
+          "mean_test_relative": 0.0037782338684551496,
+          "robust_min_test_relative": 0.001170236950797765,
+          "mean_turnover": 0.0004694650277814758,
+          "overall_gate_passed": true,
+          "wealth_first_score": 0.004011253573017925
+        }
+      ]
+    }
+  ],
+  "warnings": [
+    "Seed variability is effectively zero across all profiles in this sweep; seed may be non-informative for this deterministic model path."
+  ]
+}

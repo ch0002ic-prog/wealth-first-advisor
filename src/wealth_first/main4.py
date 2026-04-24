@@ -208,6 +208,8 @@ def _train_policy(
                     "delta_total_return_vs_static_hold": test_total_return - bh_return,
                     "mean_spy_weight": test_weight,
                     "mean_turnover": test_turnover,
+                    "test_worst_daily_relative_return": test_diag["worst_daily_relative_return"],
+                    "test_max_relative_drawdown": test_diag["max_relative_drawdown"],
                     "active": active,
                     "signal_scale": diag["signal_scale"],
                     "signal_bias": diag["signal_bias"],
@@ -321,6 +323,8 @@ def main(
         active_fraction = summary_df["active"].mean()
         mean_turnover = summary_df["mean_turnover"].mean()
         robust_min = summary_df["policy_relative_total_return"].min()
+        worst_daily_relative = summary_df["test_worst_daily_relative_return"].min()
+        worst_max_relative_drawdown = summary_df["test_max_relative_drawdown"].max()
         mean_validation_gate_suppression = summary_df["validation_gate_suppression_rate"].mean()
         mean_test_gate_suppression = summary_df["test_gate_suppression_rate"].mean()
         mean_test_executed_steps = summary_df["test_executed_step_count"].mean()
@@ -331,6 +335,8 @@ def main(
         active_fraction = 0.0
         mean_turnover = 0.0
         robust_min = 0.0
+        worst_daily_relative = 0.0
+        worst_max_relative_drawdown = 0.0
         mean_validation_gate_suppression = 0.0
         mean_test_gate_suppression = 0.0
         mean_test_executed_steps = 0.0
@@ -362,6 +368,8 @@ def main(
             "active_fraction": float(active_fraction),
             "mean_turnover": float(mean_turnover),
             "robust_min_test_relative": float(robust_min),
+            "worst_daily_relative_return": float(worst_daily_relative),
+            "worst_max_relative_drawdown": float(worst_max_relative_drawdown),
             "mean_validation_gate_suppression_rate": float(mean_validation_gate_suppression),
             "mean_test_gate_suppression_rate": float(mean_test_gate_suppression),
             "mean_test_executed_step_count": float(mean_test_executed_steps),
@@ -389,6 +397,11 @@ def main(
         file=sys.stderr,
     )
     print(f"Robust min: {robust_min:.6f}", file=sys.stderr)
+    print(
+        f"Worst daily relative return: {worst_daily_relative:.6f}, "
+        f"Worst max relative drawdown: {worst_max_relative_drawdown:.6f}",
+        file=sys.stderr,
+    )
 
     overall_passed = bool(gate_checks["overall_passed"])
     print(f"Gate checks passed: {overall_passed}", file=sys.stderr)

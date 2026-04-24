@@ -133,10 +133,16 @@ def _simulate_signal_path(
     turnovers = np.abs(np.diff(weights, prepend=weights[0]))
     wealth = 1.0
     spy_wealth = 1.0
-    for weight, turnover, ret in zip(weights, turnovers, window_returns, strict=False):
+    relative_daily_returns = np.empty(len(window_returns), dtype=float)
+    relative_ratio_path = np.empty(len(window_returns), dtype=float)
+    for t, (weight, turnover, ret) in enumerate(zip(weights, turnovers, window_returns, strict=False)):
         cost = turnover * (cfg.transaction_cost_bps + cfg.slippage_bps) / 10_000.0
-        wealth *= max(1.0 + weight * ret - cost, 1e-8)
-        spy_wealth *= 1.0 + ret
+        policy_step = max(1.0 + weight * ret - cost, 1e-8)
+        benchmark_step = max(1.0 + ret, 1e-8)
+        wealth *= policy_step
+        spy_wealth *= benchmark_step
+        relative_daily_returns[t] = policy_step / benchmark_step - 1.0
+        relative_ratio_path[t] = wealth / max(spy_wealth, 1e-8)
 
     step_count = max(len(target_weights) - 1, 0)
     signal_abs = np.abs(signal_clipped)
@@ -145,9 +151,17 @@ def _simulate_signal_path(
     turnover_slice = turnovers[1:]
     total_return = wealth - 1.0
     relative_return = wealth / max(spy_wealth, 1e-8) - 1.0
+    if len(relative_ratio_path) > 0:
+        running_peak = np.maximum.accumulate(relative_ratio_path)
+        relative_drawdown = 1.0 - relative_ratio_path / np.maximum(running_peak, 1e-8)
+        max_relative_drawdown = float(np.max(relative_drawdown))
+    else:
+        max_relative_drawdown = 0.0
     return {
         "total_return": float(total_return),
         "relative_return": float(relative_return),
+        "worst_daily_relative_return": float(np.min(relative_daily_returns)) if len(relative_daily_returns) > 0 else 0.0,
+        "max_relative_drawdown": max_relative_drawdown,
         "average_weight": float(np.mean(weights)),
         "average_turnover": float(np.mean(turnovers)),
         "signal_abs_p95": float(np.quantile(signal_abs, 0.95)) if len(signal_abs) > 0 else 0.0,

@@ -1,0 +1,67 @@
+{
+  "fingerprint": {
+    "git_commit": "7d1ebcf204b611bb93222bfa06a7257f55f12ad9",
+    "numpy_version": "2.4.4",
+    "pandas_version": "3.0.2",
+    "python_version": "3.14.3",
+    "python_version_prefix": "3.14",
+    "main4_sha256": "f897a92832984dea0b6ec4dd11207e12adf34f1388959c24998e6bdcd1e6c2a8",
+    "medium_capacity_sha256": "c5bc364175d5dfee84ffc9aa9aad5967d07b740a281a22a62ecc8d8ddf71cce0"
+  },
+  "config": {
+    "min_validation_threshold": 0.0055,
+    "min_robust_min_relative": 0.0,
+    "min_active_fraction": 0.01,
+    "n_folds": 5,
+    "validation_fraction": 0.15,
+    "test_fraction": 0.1,
+    "medium_capacity_cfg": {
+      "min_spy_weight": 0.8,
+      "max_spy_weight": 1.05,
+      "initial_spy_weight": 1.0,
+      "action_smoothing": 1.0,
+      "no_trade_band": 0.02,
+      "transaction_cost_bps": 25.0,
+      "slippage_bps": 25.0,
+      "ridge_l2": 0.015,
+      "scale_turnover_penalty": 0.0,
+      "min_signal_scale": -0.75,
+      "max_signal_scale": 0.75,
+      "target_mode": "tanh_return",
+      "use_multiplicative_signal": true,
+      "quantile_loss_tau": null
+    }
+  },
+  "summary_metrics": {
+    "n_rows": 5,
+    "mean_test_relative_total_return": 0.004782633411009396,
+    "mean_validation_relative_total_return": 0.008333641275079406,
+    "beat_hold_fraction": 1.0,
+    "active_fraction": 1.0,
+    "mean_turnover": 0.0010984751142453944,
+    "robust_min_test_relative": 0.0022639611509442936,
+    "worst_daily_relative_return": -0.003875769656829675,
+    "worst_max_relative_drawdown": 0.012157616694389195,
+    "mean_validation_gate_suppression_rate": 0.9595408895265424,
+    "mean_test_gate_suppression_rate": 0.9594827586206897,
+    "mean_test_executed_step_count": 18.8
+  },
+  "gate_checks": {
+    "validation_threshold": {
+      "passed": true,
+      "value": 0.008333641275079406,
+      "threshold": 0.0055
+    },
+    "robust_min_threshold": {
+      "passed": true,
+      "value": 0.0022639611509442936,
+      "threshold": 0.0
+    },
+    "active_fraction_threshold": {
+      "passed": true,
+      "value": 1.0,
+      "threshold": 0.01
+    },
+    "overall_passed": true
+  }
+}
