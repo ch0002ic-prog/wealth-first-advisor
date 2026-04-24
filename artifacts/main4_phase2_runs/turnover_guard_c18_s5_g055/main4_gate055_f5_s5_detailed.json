@@ -1,6 +1,6 @@
 {
   "fingerprint": {
-    "git_commit": "0411406420c90f40f2a0bdc887f50ea5d6b821d6",
+    "git_commit": "523f8f8a0cfb60f0c0c09a4d1fc6f5a3da136f80",
     "numpy_version": "2.4.4",
     "pandas_version": "3.0.2",
     "python_version": "3.14.3",

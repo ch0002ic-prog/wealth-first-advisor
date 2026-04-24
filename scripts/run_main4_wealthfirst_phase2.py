@@ -526,6 +526,99 @@ def _build_frontier_report(
     }
 
 
+def _collect_failed_gates(
+    profile_row: dict[str, Any],
+    gates: dict[str, float],
+) -> list[str]:
+    slacks = _gate_slacks(profile_row, gates)
+    return [gate for gate, slack in slacks.items() if slack < 0.0]
+
+
+def _auto_calibrate_gates(
+    profile_summary: list[dict[str, Any]],
+    gates: dict[str, float],
+) -> dict[str, Any] | None:
+    """Find nearest feasible gate set by minimally relaxing current thresholds."""
+    if not profile_summary:
+        return None
+
+    scale = {
+        "tail_worst_decile_threshold": 0.001,
+        "robust_min_threshold": 0.001,
+        "max_mean_turnover": 0.0001,
+        "min_worst_daily_relative_return": 0.001,
+        "max_worst_relative_drawdown": 0.001,
+        "min_mean_executed_step_rate": 0.001,
+        "min_path_bootstrap_robust_min_p05": 0.001,
+    }
+
+    best_candidate: dict[str, Any] | None = None
+    for row in profile_summary:
+        relaxed = {
+            "tail_worst_decile_threshold": min(
+                gates["tail_worst_decile_threshold"],
+                float(row["worst_decile_test_relative"]),
+            ),
+            "robust_min_threshold": min(
+                gates["robust_min_threshold"],
+                float(row["worst_robust_min"]),
+            ),
+            "max_mean_turnover": max(
+                gates["max_mean_turnover"],
+                float(row["mean_turnover"]),
+            ),
+            "min_worst_daily_relative_return": min(
+                gates["min_worst_daily_relative_return"],
+                float(row["worst_daily_relative_return"]),
+            ),
+            "max_worst_relative_drawdown": max(
+                gates["max_worst_relative_drawdown"],
+                float(row["worst_relative_drawdown"]),
+            ),
+            "min_mean_executed_step_rate": min(
+                gates["min_mean_executed_step_rate"],
+                float(row["mean_executed_step_rate"]),
+            ),
+            "min_path_bootstrap_robust_min_p05": min(
+                gates["min_path_bootstrap_robust_min_p05"],
+                float(row["mean_path_bootstrap_robust_min_p05"]),
+            ),
+        }
+
+        relaxation = {
+            key: abs(float(relaxed[key] - gates[key])) for key in relaxed
+        }
+        normalized_relaxation = {
+            key: float(relaxation[key] / max(scale[key], 1e-12)) for key in relaxation
+        }
+        relaxation_score = float(sum(normalized_relaxation.values()))
+
+        candidate = {
+            "target_profile": row["profile"],
+            "relaxed_gates": relaxed,
+            "relaxation": relaxation,
+            "normalized_relaxation": normalized_relaxation,
+            "relaxation_score": relaxation_score,
+            "target_profile_mean_score": float(row["mean_score"]),
+        }
+
+        if best_candidate is None:
+            best_candidate = candidate
+            continue
+
+        if candidate["relaxation_score"] < best_candidate["relaxation_score"]:
+            best_candidate = candidate
+            continue
+
+        if (
+            candidate["relaxation_score"] == best_candidate["relaxation_score"]
+            and candidate["target_profile_mean_score"] > best_candidate["target_profile_mean_score"]
+        ):
+            best_candidate = candidate
+
+    return best_candidate
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run phase-2 wealth-first stress sweep for main4.")
     parser.add_argument("--mode", choices=["quick", "full"], default="quick")
@@ -543,6 +636,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--path-bootstrap-reps", type=int, default=0)
     parser.add_argument("--path-bootstrap-block-size", type=int, default=20)
     parser.add_argument("--path-bootstrap-seed", type=int, default=12345)
+    parser.add_argument("--auto-calibrate-gates", action="store_true")
+    parser.add_argument("--auto-calibrate-apply", action="store_true")
     args = parser.parse_args(argv)
 
     if not PYTHON_BIN.exists():
@@ -601,7 +696,7 @@ def main(argv: list[str] | None = None) -> int:
         bootstrap_reps=int(args.bootstrap_reps),
         bootstrap_seed=int(args.bootstrap_seed),
     )
-    best_profile = profile_summary[0]["profile"] if profile_summary else None
+    strict_best_profile = profile_summary[0]["profile"] if profile_summary else None
 
     warnings: list[str] = []
     if profile_summary:
@@ -617,19 +712,70 @@ def main(argv: list[str] | None = None) -> int:
                 "or expanding profile search space."
             )
 
+    strict_gates = {
+        "tail_worst_decile_threshold": float(args.tail_worst_decile_threshold),
+        "robust_min_threshold": float(args.robust_min_threshold),
+        "max_mean_turnover": float(args.max_mean_turnover),
+        "min_worst_daily_relative_return": float(args.min_worst_daily_relative_return),
+        "max_worst_relative_drawdown": float(args.max_worst_relative_drawdown),
+        "min_mean_executed_step_rate": float(args.min_mean_executed_step_rate),
+        "min_path_bootstrap_robust_min_p05": float(args.min_path_bootstrap_robust_min_p05),
+    }
+
+    strict_eligible_profiles = [row["profile"] for row in profile_summary if row["eligible"]]
+    strict_has_eligible = bool(strict_eligible_profiles)
+
+    auto_calibration: dict[str, Any] | None = None
+    calibrated_summary: list[dict[str, Any]] | None = None
+    if args.auto_calibrate_gates and not strict_has_eligible:
+        auto_calibration = _auto_calibrate_gates(profile_summary, strict_gates)
+        if auto_calibration is not None and args.auto_calibrate_apply:
+            calibrated_summary = _build_profile_summary(
+                table=table,
+                tail_worst_decile_threshold=float(
+                    auto_calibration["relaxed_gates"]["tail_worst_decile_threshold"]
+                ),
+                robust_min_threshold=float(
+                    auto_calibration["relaxed_gates"]["robust_min_threshold"]
+                ),
+                max_mean_turnover=float(auto_calibration["relaxed_gates"]["max_mean_turnover"]),
+                min_worst_daily_relative_return=float(
+                    auto_calibration["relaxed_gates"]["min_worst_daily_relative_return"]
+                ),
+                max_worst_relative_drawdown=float(
+                    auto_calibration["relaxed_gates"]["max_worst_relative_drawdown"]
+                ),
+                min_mean_executed_step_rate=float(
+                    auto_calibration["relaxed_gates"]["min_mean_executed_step_rate"]
+                ),
+                min_path_bootstrap_robust_min_p05=float(
+                    auto_calibration["relaxed_gates"]["min_path_bootstrap_robust_min_p05"]
+                ),
+                bootstrap_reps=int(args.bootstrap_reps),
+                bootstrap_seed=int(args.bootstrap_seed),
+            )
+
+    failed_gate_counts: dict[str, int] = {
+        "tail_worst_decile": 0,
+        "robust_min": 0,
+        "mean_turnover": 0,
+        "mean_executed_step_rate": 0,
+        "worst_daily_relative": 0,
+        "worst_relative_drawdown": 0,
+        "path_bootstrap_robust_min_p05": 0,
+    }
+    for row in profile_summary:
+        for gate in _collect_failed_gates(row, strict_gates):
+            failed_gate_counts[gate] += 1
+
+    selected_profile_summary = calibrated_summary if (calibrated_summary is not None) else profile_summary
+    best_profile = selected_profile_summary[0]["profile"] if selected_profile_summary else None
+
     summary = {
         "mode": args.mode,
         "n_cases": int(len(table)),
         "best_profile": best_profile,
-        "eligibility_gates": {
-            "tail_worst_decile_threshold": float(args.tail_worst_decile_threshold),
-            "robust_min_threshold": float(args.robust_min_threshold),
-            "max_mean_turnover": float(args.max_mean_turnover),
-            "min_worst_daily_relative_return": float(args.min_worst_daily_relative_return),
-            "max_worst_relative_drawdown": float(args.max_worst_relative_drawdown),
-            "min_mean_executed_step_rate": float(args.min_mean_executed_step_rate),
-            "min_path_bootstrap_robust_min_p05": float(args.min_path_bootstrap_robust_min_p05),
-        },
+        "eligibility_gates": strict_gates,
         "bootstrap": {
             "reps": int(args.bootstrap_reps),
             "seed": int(args.bootstrap_seed),
@@ -640,19 +786,32 @@ def main(argv: list[str] | None = None) -> int:
             "seed": int(args.path_bootstrap_seed),
         },
         "frontier_report": _build_frontier_report(
-            profile_summary=profile_summary,
-            gates={
-                "tail_worst_decile_threshold": float(args.tail_worst_decile_threshold),
-                "robust_min_threshold": float(args.robust_min_threshold),
-                "max_mean_turnover": float(args.max_mean_turnover),
-                "min_worst_daily_relative_return": float(args.min_worst_daily_relative_return),
-                "max_worst_relative_drawdown": float(args.max_worst_relative_drawdown),
-                "min_mean_executed_step_rate": float(args.min_mean_executed_step_rate),
-                "min_path_bootstrap_robust_min_p05": float(args.min_path_bootstrap_robust_min_p05),
-            },
+            profile_summary=selected_profile_summary,
+            gates=(
+                auto_calibration["relaxed_gates"]
+                if (auto_calibration is not None and calibrated_summary is not None)
+                else strict_gates
+            ),
             best_profile=best_profile,
         ),
-        "profile_ranking": profile_summary,
+        "promotion_report": {
+            "strict_feasible": strict_has_eligible,
+            "strict_best_profile_by_score": strict_best_profile,
+            "strict_best_eligible_profile": strict_eligible_profiles[0] if strict_eligible_profiles else None,
+            "strict_failed_gate_counts": failed_gate_counts,
+            "auto_calibration_requested": bool(args.auto_calibrate_gates),
+            "auto_calibration_applied": bool(calibrated_summary is not None),
+            "auto_calibration": auto_calibration,
+            "selected_gates": (
+                auto_calibration["relaxed_gates"]
+                if (auto_calibration is not None and calibrated_summary is not None)
+                else strict_gates
+            ),
+            "selected_best_profile": best_profile,
+        },
+        "profile_ranking": selected_profile_summary,
+        "strict_profile_ranking": profile_summary,
+        "calibrated_profile_ranking": calibrated_summary,
         "warnings": warnings,
     }
 
