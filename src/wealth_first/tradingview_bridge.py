@@ -1153,11 +1153,19 @@ def _build_dashboard_snapshot(settings: BridgeSettings, app: FastAPI, recent_lim
     failure_log_path = _resolve_failure_log_path(settings)
     failure_count, recent_failures = _tail_jsonl_records(failure_log_path, recent_limit)
     returns_preview = _read_returns_preview(settings.output_csv_path, returns_limit)
+    frontend_dist_path = _resolve_frontend_dist_path(settings)
+    frontend_index_path = frontend_dist_path / "index.html"
+    frontend_mode = "frontend_dist" if frontend_index_path.exists() else "fallback_dashboard"
 
     return {
         "generated_at": datetime.now(UTC).isoformat(),
         "token_required": settings.webhook_token is not None,
         "health": _build_health_payload(settings, app),
+        "frontend": {
+            "mode": frontend_mode,
+            "frontend_dist_path": str(frontend_dist_path),
+            "frontend_index_exists": frontend_index_path.exists(),
+        },
         "counts": {
             "events": event_count,
             "executions": execution_count,
@@ -1570,6 +1578,8 @@ def create_app(settings: BridgeSettings) -> FastAPI:
 
     if frontend_assets_path.exists():
         app.mount("/assets", StaticFiles(directory=frontend_assets_path), name="frontend-assets")
+    if dashboard_directory.exists():
+        app.mount("/dashboard-static", StaticFiles(directory=dashboard_directory), name="dashboard-static")
 
     def _validate_webhook_token(token: str | None, payload: dict[str, Any] | None = None) -> None:
         if settings.webhook_token is None:
@@ -1587,6 +1597,8 @@ def create_app(settings: BridgeSettings) -> FastAPI:
 
     @app.get("/dashboard", include_in_schema=False)
     def dashboard_alias() -> FileResponse:
+        if frontend_index_path.exists():
+            return FileResponse(frontend_index_path, media_type="text/html", headers={"Cache-Control": "no-store"})
         return FileResponse(dashboard_html_path, media_type="text/html", headers={"Cache-Control": "no-store"})
 
     @app.get("/app", include_in_schema=False)

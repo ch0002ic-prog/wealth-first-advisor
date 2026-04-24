@@ -1,0 +1,34 @@
+{
+  "policy_floor": -0.007,
+  "scenarios_evaluated": [
+    "altblock_b16_s4242",
+    "baseline_b20_s4242",
+    "deepcheck_b12_s8080"
+  ],
+  "variant_count": 6,
+  "best_by_min_case_slack": {
+    "variant": "v25h_ref",
+    "scenarios": 3,
+    "all_non_path": true,
+    "all_case_floor": false,
+    "min_case_slack": -0.0009726793990810995,
+    "min_mean_path_slack": 0.0005979845273456205,
+    "mean_of_mean_path": -0.005785099607635593,
+    "mean_test_relative": 0.006055804367690282,
+    "mean_turnover": 0.00064332786681922,
+    "mean_executed_step_rate": 0.022709677419354823
+  },
+  "any_all_case_floor_pass": false,
+  "reference_variant_row": {
+    "variant": "v25h_ref",
+    "scenarios": 3,
+    "all_non_path": true,
+    "all_case_floor": false,
+    "min_case_slack": -0.0009726793990810995,
+    "min_mean_path_slack": 0.0005979845273456205,
+    "mean_of_mean_path": -0.005785099607635593,
+    "mean_test_relative": 0.006055804367690282,
+    "mean_turnover": 0.00064332786681922,
+    "mean_executed_step_rate": 0.022709677419354823
+  }
+}

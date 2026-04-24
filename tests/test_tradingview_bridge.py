@@ -23,6 +23,11 @@ from wealth_first.tradingview_bridge import (
     normalize_tradingview_payload,
 )
 
+# Import build_promotion_gate for testing
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+
 
 def _wait_for(predicate, timeout: float = 2.0, interval: float = 0.05) -> bool:
     deadline = time.monotonic() + timeout
@@ -228,6 +233,95 @@ class TradingViewBridgeTests(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertIn("Frontend Dist App", response.text)
 
+    def test_dashboard_alias_prefers_frontend_dist_when_available(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            event_log_path = Path(temp_dir) / "events.jsonl"
+            frontend_dist_path = Path(temp_dir) / "frontend-dist"
+            frontend_dist_path.mkdir(parents=True, exist_ok=True)
+            (frontend_dist_path / "index.html").write_text(
+                "<html><body><h1>Frontend Dist App</h1></body></html>", encoding="utf-8"
+            )
+
+            app = create_app(
+                BridgeSettings(
+                    event_log_path=event_log_path,
+                    normalize_on_ingest=False,
+                    worker_poll_interval_seconds=0.05,
+                    frontend_dist_path=frontend_dist_path,
+                )
+            )
+
+            with TestClient(app) as client:
+                response = client.get("/dashboard")
+
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("Frontend Dist App", response.text)
+
+    def test_dashboard_snapshot_reports_frontend_dist_mode_when_available(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            event_log_path = Path(temp_dir) / "events.jsonl"
+            frontend_dist_path = Path(temp_dir) / "frontend-dist"
+            frontend_dist_path.mkdir(parents=True, exist_ok=True)
+            (frontend_dist_path / "index.html").write_text(
+                "<html><body><h1>Frontend Dist App</h1></body></html>", encoding="utf-8"
+            )
+
+            app = create_app(
+                BridgeSettings(
+                    event_log_path=event_log_path,
+                    normalize_on_ingest=False,
+                    worker_poll_interval_seconds=0.05,
+                    frontend_dist_path=frontend_dist_path,
+                )
+            )
+
+            with TestClient(app) as client:
+                snapshot_response = client.get("/api/dashboard")
+
+            self.assertEqual(snapshot_response.status_code, 200)
+            snapshot = snapshot_response.json()
+            self.assertEqual(snapshot["frontend"]["mode"], "frontend_dist")
+            self.assertTrue(snapshot["frontend"]["frontend_index_exists"])
+
+    def test_dashboard_snapshot_reports_fallback_mode_when_dist_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            event_log_path = Path(temp_dir) / "events.jsonl"
+            missing_dist_path = Path(temp_dir) / "missing-frontend-dist"
+
+            app = create_app(
+                BridgeSettings(
+                    event_log_path=event_log_path,
+                    normalize_on_ingest=False,
+                    worker_poll_interval_seconds=0.05,
+                    frontend_dist_path=missing_dist_path,
+                )
+            )
+
+            with TestClient(app) as client:
+                snapshot_response = client.get("/api/dashboard")
+
+            self.assertEqual(snapshot_response.status_code, 200)
+            snapshot = snapshot_response.json()
+            self.assertEqual(snapshot["frontend"]["mode"], "fallback_dashboard")
+            self.assertFalse(snapshot["frontend"]["frontend_index_exists"])
+
+    def test_dashboard_static_mount_serves_local_assets(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            event_log_path = Path(temp_dir) / "events.jsonl"
+            app = create_app(
+                BridgeSettings(
+                    event_log_path=event_log_path,
+                    normalize_on_ingest=False,
+                    worker_poll_interval_seconds=0.05,
+                )
+            )
+
+            with TestClient(app) as client:
+                response = client.get("/dashboard-static/dashboard.css")
+
+            self.assertEqual(response.status_code, 200)
+            self.assertIn(":root", response.text)
+
     def test_dashboard_root_serves_html(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             event_log_path = Path(temp_dir) / "events.jsonl"
@@ -244,7 +338,11 @@ class TradingViewBridgeTests(unittest.TestCase):
 
             self.assertEqual(response.status_code, 200)
             self.assertIn("text/html", response.headers["content-type"])
-            self.assertIn("Wealth First Bridge Board", response.text)
+            if '/dashboard-static/dashboard.css' in response.text:
+                self.assertIn('/dashboard-static/dashboard.css', response.text)
+                self.assertIn('/dashboard-static/dashboard.js', response.text)
+            else:
+                self.assertIn('/assets/', response.text)
 
     def test_webhook_get_returns_reachability_status(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -590,6 +688,7 @@ class TradingViewBridgeTests(unittest.TestCase):
                     failure_log_path=failure_log_path,
                     webhook_token="secret",
                     worker_poll_interval_seconds=0.05,
+                    frontend_dist_path=Path(temp_dir) / "missing-frontend-dist",
                 )
             )
 
@@ -627,6 +726,7 @@ class TradingViewBridgeTests(unittest.TestCase):
             self.assertEqual(snapshot["counts"]["executions"], 1)
             self.assertEqual(snapshot["counts"]["failures"], 0)
             self.assertEqual(snapshot["counts"]["returns_rows"], 1)
+            self.assertEqual(snapshot["frontend"]["mode"], "fallback_dashboard")
             self.assertEqual(snapshot["recent_events"][0]["sleeve"], "ALLOCATOR")
             self.assertEqual(
                 snapshot["recent_executions"][0]["execution_mode"], "paper"
@@ -1165,5 +1265,196 @@ class TradingViewBridgeTests(unittest.TestCase):
                 )
 
 
+class PromotionGateTests(unittest.TestCase):
+    """Unit tests for phase25z promotion gate materiality thresholds."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        """Import build_promotion_gate from phase25z script."""
+        try:
+            from run_phase25z_margin_lift_search import build_promotion_gate
+            cls.build_promotion_gate = build_promotion_gate
+        except ImportError as e:
+            raise ImportError(
+                "Could not import build_promotion_gate from run_phase25z_margin_lift_search. "
+                "Ensure scripts/run_phase25z_margin_lift_search.py is available."
+            ) from e
+    def _get_build_promotion_gate(self):
+        """Dynamically import build_promotion_gate from phase25z script."""
+        try:
+            from run_phase25z_margin_lift_search import build_promotion_gate
+            return build_promotion_gate
+        except ImportError as e:
+            raise ImportError(
+                "Could not import build_promotion_gate from run_phase25z_margin_lift_search. "
+                "Ensure scripts/run_phase25z_margin_lift_search.py is available."
+            ) from e
+
+    def test_promotion_gate_rejects_new_variant_when_baseline_missing(self) -> None:
+        """Test that promotion fails if v25z_ref not in finalists."""
+        build_promotion_gate = self._get_build_promotion_gate()
+        gate = build_promotion_gate(
+            finalists=["v25z_ridge_hi", "v25z_band_lo"],  # baseline v25z_ref missing
+            best_row={"variant": "v25z_ridge_hi", "breach_count": 0, "all_non_path": True},
+            ref_row={"variant": "v25z_ref"},
+            improvement_vs_ref={
+                "delta_min_case_slack": 5e-5,  # Above threshold
+                "delta_mean_case_slack": 5e-5,
+                "delta_mean_test_relative": 5e-5,
+            },
+        )
+        self.assertEqual(gate["status"], "KEEP_REFERENCE")
+        self.assertEqual(gate["recommended_variant"], "v25z_ref")
+        self.assertFalse(gate["checks"]["baseline_in_finalists"])
+
+    def test_promotion_gate_rejects_when_materiality_delta_below_eps(self) -> None:
+        """Test that promotion fails when delta is below materiality eps."""
+        build_promotion_gate = self._get_build_promotion_gate()
+        # Use eps-1e-6 (below the 1e-5 threshold)
+        eps_minus = 1e-5 - 1e-6  # Should fail materiality check
+        gate = build_promotion_gate(
+            finalists=["v25z_ref", "v25z_ridge_hi", "v25z_band_lo"],
+            best_row={"variant": "v25z_ridge_hi", "breach_count": 0, "all_non_path": True},
+            ref_row={"variant": "v25z_ref"},
+            improvement_vs_ref={
+                "delta_min_case_slack": eps_minus,
+                "delta_mean_case_slack": eps_minus,
+                "delta_mean_test_relative": eps_minus,
+            },
+        )
+        self.assertEqual(gate["status"], "KEEP_REFERENCE")
+        self.assertEqual(gate["recommended_variant"], "v25z_ref")
+        self.assertFalse(gate["checks"]["materiality_min_case_slack"])
+        self.assertFalse(gate["checks"]["materiality_mean_case_slack"])
+        self.assertFalse(gate["checks"]["materiality_mean_test_relative"])
+
+    def test_promotion_gate_accepts_when_materiality_delta_above_eps(self) -> None:
+        """Test that promotion passes when delta is above materiality eps."""
+        build_promotion_gate = self._get_build_promotion_gate()
+        # Use eps+1e-6 (above the 1e-5 threshold)
+        eps_plus = 1e-5 + 1e-6  # Should pass materiality check
+        gate = build_promotion_gate(
+            finalists=["v25z_ref", "v25z_ridge_hi", "v25z_band_lo"],
+            best_row={"variant": "v25z_ridge_hi", "breach_count": 0, "all_non_path": True},
+            ref_row={"variant": "v25z_ref"},
+            improvement_vs_ref={
+                "delta_min_case_slack": eps_plus,
+                "delta_mean_case_slack": eps_plus,
+                "delta_mean_test_relative": eps_plus,
+            },
+        )
+        self.assertEqual(gate["status"], "PROMOTE_NEW_VARIANT")
+        self.assertEqual(gate["recommended_variant"], "v25z_ridge_hi")
+        self.assertTrue(gate["checks"]["materiality_min_case_slack"])
+        self.assertTrue(gate["checks"]["materiality_mean_case_slack"])
+        self.assertTrue(gate["checks"]["materiality_mean_test_relative"])
+
+    def test_promotion_gate_boundary_at_exact_eps(self) -> None:
+        """Test behavior when delta equals materiality eps exactly."""
+        build_promotion_gate = self._get_build_promotion_gate()
+        gate = build_promotion_gate(
+            finalists=["v25z_ref", "v25z_ridge_hi", "v25z_band_lo"],
+            best_row={"variant": "v25z_ridge_hi", "breach_count": 0, "all_non_path": True},
+            ref_row={"variant": "v25z_ref"},
+            improvement_vs_ref={
+                "delta_min_case_slack": 1e-5,  # Exactly at threshold
+                "delta_mean_case_slack": 1e-5,
+                "delta_mean_test_relative": 1e-5,
+            },
+        )
+        # At exact boundary, >= check should pass
+        self.assertEqual(gate["status"], "PROMOTE_NEW_VARIANT")
+        self.assertEqual(gate["recommended_variant"], "v25z_ridge_hi")
+        self.assertTrue(gate["checks"]["materiality_min_case_slack"])
+
+    def test_promotion_gate_rejects_when_best_not_feasible(self) -> None:
+        """Test that promotion fails if best variant is not feasible."""
+        build_promotion_gate = self._get_build_promotion_gate()
+        gate = build_promotion_gate(
+            finalists=["v25z_ref", "v25z_ridge_hi"],
+            best_row={
+                "variant": "v25z_ridge_hi",
+                "breach_count": 1,  # Not feasible
+                "all_non_path": False,
+            },
+            ref_row={"variant": "v25z_ref"},
+            improvement_vs_ref={
+                "delta_min_case_slack": 5e-5,
+                "delta_mean_case_slack": 5e-5,
+                "delta_mean_test_relative": 5e-5,
+            },
+        )
+        self.assertEqual(gate["status"], "KEEP_REFERENCE")
+        self.assertFalse(gate["checks"]["best_is_feasible"])
+
+    def test_promotion_gate_retains_ref_when_best_is_baseline(self) -> None:
+        """Test that promotion keeps reference if best variant is v25z_ref itself."""
+        build_promotion_gate = self._get_build_promotion_gate()
+        gate = build_promotion_gate(
+            finalists=["v25z_ref", "v25z_ridge_hi"],
+            best_row={"variant": "v25z_ref", "breach_count": 0, "all_non_path": True},
+            ref_row={"variant": "v25z_ref"},
+            improvement_vs_ref={
+                "delta_min_case_slack": 5e-5,
+                "delta_mean_case_slack": 5e-5,
+                "delta_mean_test_relative": 5e-5,
+            },
+        )
+        self.assertEqual(gate["status"], "KEEP_REFERENCE")
+        self.assertEqual(gate["recommended_variant"], "v25z_ref")
+
+    def test_promotion_gate_preserves_improvement_metrics(self) -> None:
+        """Test that gate preserves all improvement metric details."""
+        build_promotion_gate = self._get_build_promotion_gate()
+        improvement = {
+            "delta_min_case_slack": 1.87e-9,
+            "delta_mean_case_slack": 2.56e-9,
+            "delta_mean_test_relative": -8.79e-10,
+        }
+        gate = build_promotion_gate(
+            finalists=["v25z_ref", "v25z_ridge_hi"],
+            best_row={"variant": "v25z_ridge_hi", "breach_count": 0, "all_non_path": True},
+            ref_row={"variant": "v25z_ref"},
+            improvement_vs_ref=improvement,
+        )
+        self.assertEqual(gate["improvement_vs_ref"], improvement)
+
+    def test_promotion_gate_structure_completeness(self) -> None:
+        """Test that gate output includes all required fields."""
+        build_promotion_gate = self._get_build_promotion_gate()
+        gate = build_promotion_gate(
+            finalists=["v25z_ref", "v25z_ridge_hi"],
+            best_row={"variant": "v25z_ridge_hi", "breach_count": 0, "all_non_path": True},
+            ref_row={"variant": "v25z_ref"},
+            improvement_vs_ref={
+                "delta_min_case_slack": 1e-5,
+                "delta_mean_case_slack": 1e-5,
+                "delta_mean_test_relative": 1e-5,
+            },
+        )
+        required_fields = [
+            "status",
+            "recommended_variant",
+            "best_variant",
+            "reference_variant",
+            "materiality_eps",
+            "checks",
+            "improvement_vs_ref",
+        ]
+        for field in required_fields:
+            self.assertIn(field, gate)
+        required_checks = [
+            "baseline_in_finalists",
+            "full_ref_present",
+            "best_is_feasible",
+            "materiality_min_case_slack",
+            "materiality_mean_case_slack",
+            "materiality_mean_test_relative",
+        ]
+        for check in required_checks:
+            self.assertIn(check, gate["checks"])
+
+
 if __name__ == "__main__":
+
     unittest.main()

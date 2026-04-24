@@ -1,0 +1,90 @@
+{
+  "fixed_path_threshold": -0.007,
+  "min_step": 0.02,
+  "seeds": [
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19,
+    23,
+    29,
+    31
+  ],
+  "core_costs": [
+    18,
+    22,
+    25
+  ],
+  "sentinel_costs": [
+    22,
+    25
+  ],
+  "core_scenarios": [
+    {
+      "name": "deepcheck_b12_s8080",
+      "block_size": 12,
+      "path_seed": 8080
+    },
+    {
+      "name": "altblock_b16_s4242",
+      "block_size": 16,
+      "path_seed": 4242
+    },
+    {
+      "name": "stress_b14_s7070",
+      "block_size": 14,
+      "path_seed": 7070
+    }
+  ],
+  "sentinel_scenarios": [
+    {
+      "name": "baseline_b20_s4242",
+      "block_size": 20,
+      "path_seed": 4242
+    },
+    {
+      "name": "stress_b30_s10010",
+      "block_size": 30,
+      "path_seed": 10010
+    }
+  ],
+  "winner": "v25k_n8",
+  "variant_rank": [
+    {
+      "variant": "v25k_n8",
+      "scenarios": 5,
+      "all_non_path": true,
+      "all_case_floor": true,
+      "min_case_slack": 0.00015612574127753503,
+      "min_mean_path_slack": 0.0013080197964370176,
+      "mean_mean_path": -0.004891946403007783,
+      "mean_test_relative": 0.005359136097961709,
+      "mean_turnover": 0.0006714764520370679,
+      "mean_executed_step_rate": 0.024086021505376344,
+      "breach_count": 0
+    },
+    {
+      "variant": "v25k_ref",
+      "scenarios": 5,
+      "all_non_path": true,
+      "all_case_floor": false,
+      "min_case_slack": -0.0011655213337331714,
+      "min_mean_path_slack": -0.00016478289261110703,
+      "mean_mean_path": -0.0062779561068304485,
+      "mean_test_relative": 0.004691064697748768,
+      "mean_turnover": 0.0006214607614865513,
+      "mean_executed_step_rate": 0.022365591397849455,
+      "breach_count": 36
+    }
+  ],
+  "worst_row_winner": {
+    "scenario": "deepcheck_b12_s8080",
+    "seed": 19,
+    "transaction_cost_bps": 25,
+    "path_bootstrap_robust_min_p05": -0.006843874258722465
+  },
+  "decision": "PASS"
+}

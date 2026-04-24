@@ -1,0 +1,50 @@
+{
+  "fixed_path_threshold": -0.007,
+  "min_step": 0.02,
+  "seeds": [
+    5,
+    11,
+    17,
+    29
+  ],
+  "core_costs": [
+    18,
+    22,
+    25
+  ],
+  "sentinel_costs": [
+    22,
+    25
+  ],
+  "focus_scenarios": [
+    "rand_b13_p6575",
+    "rand_b13_p11187",
+    "rand_b12_p7573",
+    "altblock_b24_s4242"
+  ],
+  "screen_top3": [
+    "v25p_a",
+    "v25p_ref_nA",
+    "v25p_ref_n8"
+  ],
+  "full_best": {
+    "variant": "v25p_a",
+    "rows": 96,
+    "all_non_path": true,
+    "all_case_floor": false,
+    "min_case_slack": -0.00026860155688486834,
+    "mean_case_slack": 0.001952621417828539,
+    "mean_test_relative": 0.005431477643062138,
+    "mean_turnover": 0.0006707529060632236,
+    "mean_executed_step_rate": 0.02408602150537634,
+    "breach_count": 1
+  },
+  "full_any_feasible": false,
+  "winner_worst_row": {
+    "scenario": "rand_b13_p6575",
+    "scenario_group": "random_shortblock",
+    "seed": 5,
+    "transaction_cost_bps": 25,
+    "path_bootstrap_robust_min_p05": -0.0072686015568848685
+  }
+}

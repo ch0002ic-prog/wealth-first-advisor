@@ -1,0 +1,164 @@
+{
+  "rows": [
+    {
+      "min_step": 0.02,
+      "cap": 0.001,
+      "resolved_after": -0.007,
+      "strict_feasible": false,
+      "strict_feasible_profile_count": 0,
+      "strict_best_eligible_profile": null
+    },
+    {
+      "min_step": 0.02,
+      "cap": 0.002,
+      "resolved_after": -0.008,
+      "strict_feasible": false,
+      "strict_feasible_profile_count": 0,
+      "strict_best_eligible_profile": null
+    },
+    {
+      "min_step": 0.02,
+      "cap": 0.003,
+      "resolved_after": -0.00879928086325375,
+      "strict_feasible": true,
+      "strict_feasible_profile_count": 1,
+      "strict_best_eligible_profile": "v25c_tailhard_01"
+    },
+    {
+      "min_step": 0.02,
+      "cap": 0.004,
+      "resolved_after": -0.00879928086325375,
+      "strict_feasible": true,
+      "strict_feasible_profile_count": 1,
+      "strict_best_eligible_profile": "v25c_tailhard_01"
+    },
+    {
+      "min_step": 0.019,
+      "cap": 0.001,
+      "resolved_after": -0.007,
+      "strict_feasible": false,
+      "strict_feasible_profile_count": 0,
+      "strict_best_eligible_profile": null
+    },
+    {
+      "min_step": 0.019,
+      "cap": 0.002,
+      "resolved_after": -0.008,
+      "strict_feasible": false,
+      "strict_feasible_profile_count": 0,
+      "strict_best_eligible_profile": null
+    },
+    {
+      "min_step": 0.019,
+      "cap": 0.003,
+      "resolved_after": -0.00879928086325375,
+      "strict_feasible": true,
+      "strict_feasible_profile_count": 1,
+      "strict_best_eligible_profile": "v25c_tailhard_01"
+    },
+    {
+      "min_step": 0.019,
+      "cap": 0.004,
+      "resolved_after": -0.00879928086325375,
+      "strict_feasible": true,
+      "strict_feasible_profile_count": 1,
+      "strict_best_eligible_profile": "v25c_tailhard_01"
+    },
+    {
+      "min_step": 0.018,
+      "cap": 0.001,
+      "resolved_after": -0.007,
+      "strict_feasible": false,
+      "strict_feasible_profile_count": 0,
+      "strict_best_eligible_profile": null
+    },
+    {
+      "min_step": 0.018,
+      "cap": 0.002,
+      "resolved_after": -0.008,
+      "strict_feasible": false,
+      "strict_feasible_profile_count": 0,
+      "strict_best_eligible_profile": null
+    },
+    {
+      "min_step": 0.018,
+      "cap": 0.003,
+      "resolved_after": -0.00879928086325375,
+      "strict_feasible": true,
+      "strict_feasible_profile_count": 1,
+      "strict_best_eligible_profile": "v25c_tailhard_01"
+    },
+    {
+      "min_step": 0.018,
+      "cap": 0.004,
+      "resolved_after": -0.00879928086325375,
+      "strict_feasible": true,
+      "strict_feasible_profile_count": 1,
+      "strict_best_eligible_profile": "v25c_tailhard_01"
+    },
+    {
+      "min_step": 0.017,
+      "cap": 0.001,
+      "resolved_after": -0.007,
+      "strict_feasible": false,
+      "strict_feasible_profile_count": 0,
+      "strict_best_eligible_profile": null
+    },
+    {
+      "min_step": 0.017,
+      "cap": 0.002,
+      "resolved_after": -0.008,
+      "strict_feasible": false,
+      "strict_feasible_profile_count": 0,
+      "strict_best_eligible_profile": null
+    },
+    {
+      "min_step": 0.017,
+      "cap": 0.003,
+      "resolved_after": -0.0085813555199533,
+      "strict_feasible": true,
+      "strict_feasible_profile_count": 2,
+      "strict_best_eligible_profile": "v25c_tailhard_01"
+    },
+    {
+      "min_step": 0.017,
+      "cap": 0.004,
+      "resolved_after": -0.0085813555199533,
+      "strict_feasible": true,
+      "strict_feasible_profile_count": 2,
+      "strict_best_eligible_profile": "v25c_tailhard_01"
+    },
+    {
+      "min_step": 0.016,
+      "cap": 0.001,
+      "resolved_after": -0.007,
+      "strict_feasible": false,
+      "strict_feasible_profile_count": 0,
+      "strict_best_eligible_profile": null
+    },
+    {
+      "min_step": 0.016,
+      "cap": 0.002,
+      "resolved_after": -0.008,
+      "strict_feasible": false,
+      "strict_feasible_profile_count": 0,
+      "strict_best_eligible_profile": null
+    },
+    {
+      "min_step": 0.016,
+      "cap": 0.003,
+      "resolved_after": -0.0085813555199533,
+      "strict_feasible": true,
+      "strict_feasible_profile_count": 2,
+      "strict_best_eligible_profile": "v25c_tailhard_01"
+    },
+    {
+      "min_step": 0.016,
+      "cap": 0.004,
+      "resolved_after": -0.0085813555199533,
+      "strict_feasible": true,
+      "strict_feasible_profile_count": 2,
+      "strict_best_eligible_profile": "v25c_tailhard_01"
+    }
+  ]
+}

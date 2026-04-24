@@ -1,0 +1,78 @@
+{
+  "fingerprint": {
+    "git_commit": "4ac9fa178ad5dc108d12439e00c9ab011fe99b0f",
+    "numpy_version": "2.4.4",
+    "pandas_version": "3.0.2",
+    "python_version": "3.14.3",
+    "python_version_prefix": "3.14",
+    "main4_sha256": "64c31179ebf95429eeb0714c33991e9b76e9e8679df466515bf0987857db0cb1",
+    "medium_capacity_sha256": "fc7a2724737d2fec886462dcbb1ef1cfdb06cd9cf803a5aaaa705e6dc1d8806a"
+  },
+  "config": {
+    "min_validation_threshold": 0.0055,
+    "min_robust_min_relative": 0.0,
+    "min_active_fraction": 0.01,
+    "n_folds": 5,
+    "validation_fraction": 0.15,
+    "test_fraction": 0.1,
+    "medium_capacity_cfg": {
+      "min_spy_weight": 0.8,
+      "max_spy_weight": 1.05,
+      "initial_spy_weight": 1.0,
+      "action_smoothing": 1.14,
+      "no_trade_band": 0.0215,
+      "transaction_cost_bps": 25.0,
+      "slippage_bps": 25.0,
+      "ridge_l2": 0.021,
+      "scale_turnover_penalty": 3.0,
+      "min_signal_scale": -0.65,
+      "max_signal_scale": 0.65,
+      "target_mode": "tanh_return",
+      "use_multiplicative_signal": true,
+      "quantile_loss_tau": null
+    }
+  },
+  "summary_metrics": {
+    "n_rows": 5,
+    "mean_test_relative_total_return": 0.006081594873280194,
+    "mean_validation_relative_total_return": 0.008450280069421945,
+    "beat_hold_fraction": 1.0,
+    "active_fraction": 1.0,
+    "mean_turnover": 0.0006505539019767048,
+    "robust_min_test_relative": 0.0032793641792554507,
+    "worst_daily_relative_return": -0.001886210325626747,
+    "worst_max_relative_drawdown": 0.0063202674247963,
+    "mean_validation_gate_suppression_rate": 0.9784791965566715,
+    "mean_test_gate_suppression_rate": 0.9767241379310345,
+    "mean_test_executed_step_count": 10.8,
+    "path_bootstrap_mean_test_relative_p05": 0.0026885545922998443,
+    "path_bootstrap_mean_test_relative_p50": 0.005800535094932635,
+    "path_bootstrap_mean_test_relative_p95": 0.009756469352401927,
+    "path_bootstrap_robust_min_test_relative_p05": -0.0044949570962503575,
+    "path_bootstrap_robust_min_test_relative_p50": 0.0005125319996237554,
+    "path_bootstrap_robust_min_test_relative_p95": 0.0048276962688556775
+  },
+  "path_bootstrap": {
+    "reps": 300,
+    "block_size": 20,
+    "seed": 4259
+  },
+  "gate_checks": {
+    "validation_threshold": {
+      "passed": true,
+      "value": 0.008450280069421945,
+      "threshold": 0.0055
+    },
+    "robust_min_threshold": {
+      "passed": true,
+      "value": 0.0032793641792554507,
+      "threshold": 0.0
+    },
+    "active_fraction_threshold": {
+      "passed": true,
+      "value": 1.0,
+      "threshold": 0.01
+    },
+    "overall_passed": true
+  }
+}

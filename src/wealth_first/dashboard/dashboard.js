@@ -32,6 +32,7 @@ const elements = {
   returnsPath: document.getElementById("returnsPath"),
   executionPath: document.getElementById("executionPath"),
   failurePath: document.getElementById("failurePath"),
+  frontendMode: document.getElementById("frontendMode"),
   tokenHint: document.getElementById("tokenHint"),
   tokenInput: document.getElementById("tokenInput"),
   payloadInput: document.getElementById("payloadInput"),
@@ -312,6 +313,7 @@ function applySnapshot(snapshot) {
   setText(elements.returnsPath, paths.output_csv_path);
   setText(elements.executionPath, paths.execution_log_path);
   setText(elements.failurePath, paths.failure_log_path);
+  setText(elements.frontendMode, snapshot.frontend?.mode);
 
   updateWorkerPill(snapshot.health);
   elements.lastUpdatedLabel.textContent = `Last updated ${formatTimestamp(snapshot.generated_at)}`;

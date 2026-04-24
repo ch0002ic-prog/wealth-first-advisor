@@ -1,0 +1,108 @@
+{
+  "fixed_path_threshold": -0.007,
+  "min_step": 0.02,
+  "path_bootstrap_reps": 600,
+  "screen_scenarios": [
+    {
+      "name": "worst_rt_b12_p8403",
+      "block_size": 12,
+      "path_seed": 8403,
+      "group": "screen_random"
+    },
+    {
+      "name": "worst_rt_b12_p12209",
+      "block_size": 12,
+      "path_seed": 12209,
+      "group": "screen_random"
+    },
+    {
+      "name": "worst_rh_b10_p13419",
+      "block_size": 10,
+      "path_seed": 13419,
+      "group": "screen_random"
+    },
+    {
+      "name": "worst_rt_b10_p7064",
+      "block_size": 10,
+      "path_seed": 7064,
+      "group": "screen_random"
+    },
+    {
+      "name": "deepcheck_b12_s8080",
+      "block_size": 12,
+      "path_seed": 8080,
+      "group": "screen_curated"
+    },
+    {
+      "name": "stress_b14_s7070",
+      "block_size": 14,
+      "path_seed": 7070,
+      "group": "screen_curated"
+    },
+    {
+      "name": "stress_b30_s10010",
+      "block_size": 30,
+      "path_seed": 10010,
+      "group": "screen_curated"
+    }
+  ],
+  "screen_rows": [
+    {
+      "seed": 5,
+      "cost": 22
+    },
+    {
+      "seed": 5,
+      "cost": 25
+    },
+    {
+      "seed": 17,
+      "cost": 22
+    },
+    {
+      "seed": 17,
+      "cost": 25
+    }
+  ],
+  "finalists": [
+    "v25z_ref",
+    "v25z_ridge_hi",
+    "v25z_band_lo"
+  ],
+  "full_best": {
+    "variant": "v25z_ridge_hi",
+    "rows": 137,
+    "all_non_path": true,
+    "breach_count": 0,
+    "min_case_slack": 0.00010803950603879842,
+    "mean_case_slack": 0.0021191235110572244,
+    "mean_test_relative": 0.0054132336535514525,
+    "mean_turnover": 0.0006707527088361766,
+    "mean_executed_step_rate": 0.02408602150537634
+  },
+  "full_ref": {
+    "variant": "v25z_ref",
+    "rows": 137,
+    "all_non_path": true,
+    "breach_count": 0,
+    "min_case_slack": 0.00010803763647745414,
+    "mean_case_slack": 0.0021191209478833243,
+    "mean_test_relative": 0.005413234532392581,
+    "mean_turnover": 0.0006707529060632235,
+    "mean_executed_step_rate": 0.02408602150537634
+  },
+  "improvement_vs_ref": {
+    "delta_min_case_slack": 1.869561344278181e-09,
+    "delta_mean_case_slack": 2.5631739001240328e-09,
+    "delta_mean_test_relative": -8.78841128343355e-10
+  },
+  "full_any_feasible": true,
+  "worst_row_best": {
+    "group": "random_train",
+    "scenario": "random_train_b12_p8403",
+    "seed": 17,
+    "transaction_cost_bps": 25,
+    "path_bootstrap_robust_min_p05": -0.006891960493961202,
+    "case_slack": 0.00010803950603879842
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "fixed_path_threshold": -0.007,
+  "min_step": 0.02,
+  "reps_grid": [
+    600
+  ],
+  "curated_scenarios": [
+    {
+      "name": "baseline_b20_s4242",
+      "block_size": 20,
+      "path_seed": 4242,
+      "group": "curated"
+    },
+    {
+      "name": "altseed_b20_s5252",
+      "block_size": 20,
+      "path_seed": 5252,
+      "group": "curated"
+    },
+    {
+      "name": "altblock_b16_s4242",
+      "block_size": 16,
+      "path_seed": 4242,
+      "group": "curated"
+    },
+    {
+      "name": "altblock_b24_s4242",
+      "block_size": 24,
+      "path_seed": 4242,
+      "group": "curated"
+    },
+    {
+      "name": "altboth_b24_s6060",
+      "block_size": 24,
+      "path_seed": 6060,
+      "group": "curated"
+    },
+    {
+      "name": "deepcheck_b12_s8080",
+      "block_size": 12,
+      "path_seed": 8080,
+      "group": "curated"
+    },
+    {
+      "name": "deepcheck_b28_s9090",
+      "block_size": 28,
+      "path_seed": 9090,
+      "group": "curated"
+    },
+    {
+      "name": "stress_b14_s7070",
+      "block_size": 14,
+      "path_seed": 7070,
+      "group": "curated"
+    },
+    {
+      "name": "stress_b30_s10010",
+      "block_size": 30,
+      "path_seed": 10010,
+      "group": "curated"
+    }
+  ],
+  "random_train_seed": 5601,
+  "random_holdout_seed": 6713,
+  "random_scenario_count": 8,
+  "random_test_rows": [
+    {
+      "seed": 5,
+      "cost": 22
+    },
+    {
+      "seed": 5,
+      "cost": 25
+    },
+    {
+      "seed": 17,
+      "cost": 22
+    },
+    {
+      "seed": 17,
+      "cost": 25
+    }
+  ],
+  "decision": "PASS",
+  "recommended": {
+    "variant": "v25x_pA",
+    "path_bootstrap_reps": 600,
+    "rows": 145,
+    "all_non_path": true,
+    "curated_breach_count": 0,
+    "train_breach_count": 0,
+    "holdout_breach_count": 0,
+    "total_breach_count": 0,
+    "min_case_slack": 0.00010803763647745414,
+    "mean_case_slack": 0.002109439341995505,
+    "mean_test_relative": 0.005409486126300192,
+    "mean_turnover": 0.0006707529060632235,
+    "mean_executed_step_rate": 0.02408602150537634
+  },
+  "recommended_worst_row": {
+    "group": "random_train",
+    "scenario": "random_train_b12_p8403",
+    "seed": 17,
+    "transaction_cost_bps": 25,
+    "path_bootstrap_robust_min_p05": -0.006891962363522546,
+    "case_slack": 0.00010803763647745414
+  }
+}
