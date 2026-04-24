@@ -1,0 +1,40 @@
+{
+  "fingerprint": {
+    "git_commit": "2d7339e0e8ff61f70144322f4d1252a36f8bc8f5",
+    "numpy_version": "2.4.4",
+    "pandas_version": "3.0.2",
+    "python_version": "3.14.3",
+    "python_version_prefix": "3.14",
+    "main4_sha256": "3943cfae5360b2dbd0aef8c25018e70600a72c7ab38709dca17637eb0e24040a",
+    "medium_capacity_sha256": "fa2d6cf26ba963d3a2807a44ee112d5c2120a9ecf7482bbec0db01e533fc1300"
+  },
+  "config": {
+    "min_validation_threshold": 0.012,
+    "min_robust_min_relative": -0.01,
+    "min_active_fraction": 0.01,
+    "n_folds": 3,
+    "validation_fraction": 0.15,
+    "test_fraction": 0.1,
+    "medium_capacity_cfg": {
+      "min_spy_weight": 0.8,
+      "max_spy_weight": 1.05,
+      "initial_spy_weight": 1.0,
+      "action_smoothing": 0.5,
+      "no_trade_band": 0.02,
+      "transaction_cost_bps": 5.0,
+      "slippage_bps": 5.0,
+      "ridge_l2": 1.0,
+      "use_multiplicative_signal": true,
+      "quantile_loss_tau": null
+    }
+  },
+  "summary_metrics": {
+    "n_rows": 3,
+    "mean_test_relative_total_return": 0.0015557744670591604,
+    "mean_validation_relative_total_return": 0.003580168279768777,
+    "beat_hold_fraction": 0.3333333333333333,
+    "active_fraction": 0.6666666666666666,
+    "mean_turnover": 3.0735285945840183e-05,
+    "robust_min_test_relative": -0.0015216743929570287
+  }
+}

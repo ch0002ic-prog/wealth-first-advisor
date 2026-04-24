@@ -1,0 +1,41 @@
+{
+  "overall": {
+    "rows": 12,
+    "mean_policy_total_return": 0.29092748443836336,
+    "mean_static_hold_total_return": 0.34104293548496095,
+    "mean_policy_relative_total_return": -0.0369486643769319,
+    "mean_policy_cash_weight": 0.1324487102663987,
+    "mean_policy_turnover": 0.0023375729537926837
+  },
+  "by_phase": {
+    "test": {
+      "rows": 6,
+      "mean_policy_total_return": 0.304949148552816,
+      "mean_static_hold_total_return": 0.35324084267117595,
+      "mean_policy_relative_total_return": -0.035633352872011546,
+      "beat_static_rate": 0.0
+    },
+    "validation": {
+      "rows": 6,
+      "mean_policy_total_return": 0.2769058203239108,
+      "mean_static_hold_total_return": 0.32884502829874596,
+      "mean_policy_relative_total_return": -0.038263975881852264,
+      "beat_static_rate": 0.0
+    }
+  },
+  "diagnostics": {
+    "mean_train_diag_passed_candidates": 90.0,
+    "mean_train_diag_coarse_candidates": 120.0,
+    "mean_train_diag_refine_candidates": 80.0,
+    "mean_train_diag_gate_fail_tail_cash": 95.83333333333333,
+    "mean_train_diag_gate_fail_tail_relative": 11.666666666666666,
+    "mean_train_diag_gate_fail_stress_relative": 0.5,
+    "mean_train_diag_gate_fail_turnover": 1.6666666666666667,
+    "mean_train_diag_tail_calm_share": 0.49166666666666664,
+    "mean_train_diag_tail_drawdown_share": 0.25416666666666665,
+    "mean_train_diag_tail_high_vol_share": 0.0,
+    "mean_train_diag_tail_rows": 120.0,
+    "mean_train_diag_stress_rows": 128.5,
+    "fallback_rate": 0.16666666666666666
+  }
+}

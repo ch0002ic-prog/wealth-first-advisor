@@ -1,0 +1,59 @@
+{
+  "overall": {
+    "rows": 120,
+    "mean_policy_total_return": 0.32378180402654533,
+    "mean_static_hold_total_return": 0.3226452488347388,
+    "mean_policy_relative_total_return": 0.0008838729142622681,
+    "mean_policy_cash_weight": 0.0014813558294272686,
+    "mean_policy_borrow_weight": 0.0030608228669479296,
+    "mean_policy_turnover": 0.0010410863169380193
+  },
+  "by_phase": {
+    "test": {
+      "rows": 60,
+      "mean_policy_total_return": 0.3264481143378836,
+      "mean_static_hold_total_return": 0.32637027124619533,
+      "mean_policy_relative_total_return": 5.811507514850156e-05,
+      "beat_static_rate": 0.11666666666666667
+    },
+    "validation": {
+      "rows": 60,
+      "mean_policy_total_return": 0.321115493715207,
+      "mean_static_hold_total_return": 0.31892022642328216,
+      "mean_policy_relative_total_return": 0.0017096307533760347,
+      "beat_static_rate": 0.15
+    }
+  },
+  "diagnostics": {
+    "mean_train_diag_passed_candidates": 268.43333333333334,
+    "mean_train_diag_coarse_candidates": 260.0,
+    "mean_train_diag_refine_candidates": 220.0,
+    "mean_train_diag_gate_fail_tail_cash": 0.3,
+    "mean_train_diag_gate_fail_tail_relative": 1.75,
+    "mean_train_diag_gate_fail_stress_relative": 2.1166666666666667,
+    "mean_train_diag_gate_fail_full_relative": 0.0,
+    "mean_train_diag_gate_fail_turnover": 25.9,
+    "mean_train_diag_gate_fail_inactive": 0.0,
+    "mean_train_diag_gate_fail_robust_window": 0.0,
+    "mean_train_diag_gate_fail_overfit_gap": 0.7333333333333333,
+    "mean_train_diag_gate_fail_regime_shift": 200.16666666666666,
+    "mean_train_diag_rescue_gate_used": 0.0,
+    "mean_train_diag_near_lower_bound_count": 0.2833333333333333,
+    "mean_train_diag_near_upper_bound_count": 0.25,
+    "mean_train_diag_tail_calm_share": 0.4783333333333333,
+    "mean_train_diag_tail_drawdown_share": 0.23500000000000001,
+    "mean_train_diag_tail_high_vol_share": 0.13,
+    "mean_train_diag_objective_weight_full": 0.4166666666666666,
+    "mean_train_diag_objective_weight_tail": 0.38333333333333336,
+    "mean_train_diag_objective_weight_stress": 0.2,
+    "mean_train_diag_robust_window_mean_relative": 0.0008017584255024757,
+    "mean_train_diag_robust_window_min_relative": -0.0017662529662271923,
+    "mean_train_diag_robust_window_std_relative": 0.0025397537970522723,
+    "mean_train_diag_validation_relative_total_return": 0.002314184645560687,
+    "mean_train_diag_active_selected": 0.15,
+    "mean_train_diag_selected_via_pareto": 1.0,
+    "mean_train_diag_tail_rows": 200.0,
+    "mean_train_diag_stress_rows": 104.66666666666667,
+    "fallback_rate": 0.0
+  }
+}

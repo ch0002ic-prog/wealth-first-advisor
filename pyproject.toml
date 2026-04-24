@@ -28,7 +28,8 @@ rl = [
 wealth-first-demo = "wealth_first.cli:main"
 wealth-first-tv-bridge = "wealth_first.tradingview_bridge:main"
 wealth-first-train-ppo = "wealth_first.train_ppo:main"
-wealth-first-main2 = "wealth_first.main2:main"
+wealth-first-main3 = "wealth_first.main3:main"
+wealth-first-main3-structural-diagnosis = "wealth_first.main3_structural_diagnosis:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

@@ -9,7 +9,6 @@ frontend/dist/
 frontend/.vite/
 .vercel/
 artifacts/archive/
-artifacts/main2_live_*
 artifacts/*smoke*
 data/tradingview_*.jsonl
 data/tradingview_truth.csv

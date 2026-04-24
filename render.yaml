@@ -22,8 +22,6 @@ services:
         value: /var/data/tradingview_execution.jsonl
       - key: WEALTH_FIRST_FAILURE_LOG_PATH
         value: /var/data/tradingview_bridge_failures.jsonl
-      - key: WEALTH_FIRST_MAIN2_COMPARE_DETAIL_CSV_PATH
-        value: /var/data/artifacts/main2_2007_v8_best_detail.csv
       - key: WEALTH_FIRST_ALLOWED_ORIGINS
         value: https://wealth-first-advisor.vercel.app
       - key: WEALTH_FIRST_ALLOWED_ORIGIN_REGEX

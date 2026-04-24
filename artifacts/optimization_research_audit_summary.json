@@ -1,0 +1,141 @@
+{
+  "structural_diagnosis": {
+    "overall": {
+      "rows": 12
+    },
+    "by_model_phase": {
+      "base6:test": {
+        "rows": 3,
+        "mean_pred_ic": 0.054617505778569296,
+        "mean_sign_accuracy": 0.4953405017921147,
+        "mean_relative_total_return": -0.036314956546993425,
+        "mean_avg_turnover": 0.0039535983740513125,
+        "mean_avg_cash_weight": 0.16700749331203305
+      },
+      "base6:validation": {
+        "rows": 3,
+        "mean_pred_ic": 0.11476260354760563,
+        "mean_sign_accuracy": 0.5191021967526267,
+        "mean_relative_total_return": -0.02974396008751549,
+        "mean_avg_turnover": 0.003783023634269342,
+        "mean_avg_cash_weight": 0.16712422152871031
+      },
+      "rich15:test": {
+        "rows": 3,
+        "mean_pred_ic": 0.06582252475650256,
+        "mean_sign_accuracy": 0.5103942652329749,
+        "mean_relative_total_return": -0.035442184323631144,
+        "mean_avg_turnover": 0.003178485220414914,
+        "mean_avg_cash_weight": 0.17416650709242384
+      },
+      "rich15:validation": {
+        "rows": 3,
+        "mean_pred_ic": 0.13486165534421646,
+        "mean_sign_accuracy": 0.5191021967526265,
+        "mean_relative_total_return": -0.028305282022083007,
+        "mean_avg_turnover": 0.0025883843292959555,
+        "mean_avg_cash_weight": 0.17680235786671453
+      }
+    },
+    "uplift": {
+      "mean_uplift": 0.0011557251443973793,
+      "test_mean_uplift": 0.0008727722233622762,
+      "validation_mean_uplift": 0.0014386780654324822
+    }
+  },
+  "main4_stress_suite": {
+    "n_cases": 8,
+    "best_case": "low_friction",
+    "best_mean_test_relative": 0.0015701698070588,
+    "baseline_mean_test_relative": 0.0015557744670591667,
+    "improvement_vs_baseline": 1.4395339999633211e-05,
+    "ranked_cases": [
+      {
+        "case": "low_friction",
+        "mean_test_relative": 0.0015701698070588,
+        "delta_relative_vs_baseline": 1.4395339999633211e-05,
+        "beat_hold_fraction": 0.3333333333333333,
+        "active_fraction": 0.6666666666666666,
+        "mean_turnover": 3.0735285945840183e-05,
+        "delta_turnover_vs_baseline": 0.0
+      },
+      {
+        "case": "baseline",
+        "mean_test_relative": 0.0015557744670591667,
+        "delta_relative_vs_baseline": 0.0,
+        "beat_hold_fraction": 0.3333333333333333,
+        "active_fraction": 0.6666666666666666,
+        "mean_turnover": 3.0735285945840183e-05,
+        "delta_turnover_vs_baseline": 0.0
+      },
+      {
+        "case": "tighter_gate",
+        "mean_test_relative": 0.0015557744670591667,
+        "delta_relative_vs_baseline": 0.0,
+        "beat_hold_fraction": 0.3333333333333333,
+        "active_fraction": 0.6666666666666666,
+        "mean_turnover": 3.0735285945840183e-05,
+        "delta_turnover_vs_baseline": 0.0
+      },
+      {
+        "case": "higher_ridge",
+        "mean_test_relative": 0.0015540545595998,
+        "delta_relative_vs_baseline": -1.7199074593668342e-06,
+        "beat_hold_fraction": 0.3333333333333333,
+        "active_fraction": 0.6666666666666666,
+        "mean_turnover": 3.067473168330592e-05,
+        "delta_turnover_vs_baseline": -6.0554262534262e-08
+      },
+      {
+        "case": "high_friction",
+        "mean_test_relative": 0.0015413791270594,
+        "delta_relative_vs_baseline": -1.4395339999766785e-05,
+        "beat_hold_fraction": 0.3333333333333333,
+        "active_fraction": 0.6666666666666666,
+        "mean_turnover": 3.0735285945840183e-05,
+        "delta_turnover_vs_baseline": 0.0
+      },
+      {
+        "case": "very_high_friction",
+        "mean_test_relative": 0.0015125884470595999,
+        "delta_relative_vs_baseline": -4.318601999956685e-05,
+        "beat_hold_fraction": 0.3333333333333333,
+        "active_fraction": 0.6666666666666666,
+        "mean_turnover": 3.0735285945840183e-05,
+        "delta_turnover_vs_baseline": 0.0
+      },
+      {
+        "case": "lower_smoothing",
+        "mean_test_relative": 0.0,
+        "delta_relative_vs_baseline": -0.0015557744670591667,
+        "beat_hold_fraction": 0.0,
+        "active_fraction": 0.0,
+        "mean_turnover": 0.0,
+        "delta_turnover_vs_baseline": -3.0735285945840183e-05
+      },
+      {
+        "case": "higher_no_trade_band",
+        "mean_test_relative": -0.004438993818037433,
+        "delta_relative_vs_baseline": -0.0059947682850966,
+        "beat_hold_fraction": 0.0,
+        "active_fraction": 0.3333333333333333,
+        "mean_turnover": 2.9092633970794276e-05,
+        "delta_turnover_vs_baseline": -1.642651975045907e-06
+      }
+    ]
+  },
+  "recommendations": [
+    "Do not spend the next cycle on more linear feature expansion alone; rich15 only marginally improves main3 and remains negative on test.",
+    "Prioritize the medium-capacity path around main4: extend regime features, tighten action gating, and keep the evaluation harness friction-aware.",
+    "Use 'low_friction' as the current promoted main4 stress configuration and rerun deeper validation before adding model complexity.",
+    "If you revisit DRL later, constrain it to a bounded-delta overlay that must beat main4 under the same walk-forward and friction tests.",
+    "Add an experiment harness that ranks candidates by full-sample metrics, decisive-only metrics, decision rate, and turnover so improvements are not hidden by abstention or inactivity."
+  ],
+  "artifacts": {
+    "structural_detail_csv": "/Users/ch0002techvc/Downloads/wealth-first-investing/artifacts/optimization_research_structural_detail.csv",
+    "structural_summary_json": "/Users/ch0002techvc/Downloads/wealth-first-investing/artifacts/optimization_research_structural_summary.json",
+    "main4_stress_suite_summary_json": "/Users/ch0002techvc/Downloads/wealth-first-investing/artifacts/main4_stress_suite_summary.json",
+    "audit_summary_json": "/Users/ch0002techvc/Downloads/wealth-first-investing/artifacts/optimization_research_audit_summary.json",
+    "audit_markdown": "/Users/ch0002techvc/Downloads/wealth-first-investing/artifacts/optimization_research_audit.md"
+  }
+}

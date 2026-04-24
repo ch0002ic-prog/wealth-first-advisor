@@ -1,0 +1,44 @@
+{
+  "overall": {
+    "rows": 12
+  },
+  "by_model_phase": {
+    "base6:test": {
+      "rows": 3,
+      "mean_pred_ic": 0.054617505778569296,
+      "mean_sign_accuracy": 0.4953405017921147,
+      "mean_relative_total_return": -0.036314956546993425,
+      "mean_avg_turnover": 0.0039535983740513125,
+      "mean_avg_cash_weight": 0.16700749331203305
+    },
+    "base6:validation": {
+      "rows": 3,
+      "mean_pred_ic": 0.11476260354760563,
+      "mean_sign_accuracy": 0.5191021967526267,
+      "mean_relative_total_return": -0.02974396008751549,
+      "mean_avg_turnover": 0.003783023634269342,
+      "mean_avg_cash_weight": 0.16712422152871031
+    },
+    "rich15:test": {
+      "rows": 3,
+      "mean_pred_ic": 0.06582252475650256,
+      "mean_sign_accuracy": 0.5103942652329749,
+      "mean_relative_total_return": -0.035442184323631144,
+      "mean_avg_turnover": 0.003178485220414914,
+      "mean_avg_cash_weight": 0.17416650709242384
+    },
+    "rich15:validation": {
+      "rows": 3,
+      "mean_pred_ic": 0.13486165534421646,
+      "mean_sign_accuracy": 0.5191021967526265,
+      "mean_relative_total_return": -0.028305282022083007,
+      "mean_avg_turnover": 0.0025883843292959555,
+      "mean_avg_cash_weight": 0.17680235786671453
+    }
+  },
+  "uplift": {
+    "mean_uplift": 0.0011557251443973793,
+    "test_mean_uplift": 0.0008727722233622762,
+    "validation_mean_uplift": 0.0014386780654324822
+  }
+}

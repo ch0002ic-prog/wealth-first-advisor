@@ -74,8 +74,6 @@ class TradingViewBridgeTests(unittest.TestCase):
                     "WEALTH_FIRST_EXECUTION_LOG_PATH": str(root / "runtime" / "execution.jsonl"),
                     "WEALTH_FIRST_FAILURE_LOG_PATH": str(root / "runtime" / "failures.jsonl"),
                     "WEALTH_FIRST_ARTIFACT_ROOT_PATH": str(root / "runtime" / "artifacts"),
-                    "WEALTH_FIRST_MAIN2_RETURNS_CSV_PATH": str(root / "data" / "demo.csv"),
-                    "WEALTH_FIRST_MAIN2_COMPARE_DETAIL_CSV_PATH": str(root / "runtime" / "artifacts" / "baseline_detail.csv"),
                     "WEALTH_FIRST_ALLOWED_ORIGINS": "https://wealth-first-advisor.vercel.app, https://preview.example.com ",
                     "WEALTH_FIRST_ALLOWED_ORIGIN_REGEX": r"https://wealth-first-advisor-.*\.vercel\.app",
                     "WEALTH_FIRST_NORMALIZE_ON_INGEST": "false",
@@ -91,8 +89,6 @@ class TradingViewBridgeTests(unittest.TestCase):
             self.assertEqual(settings.execution_log_path, root / "runtime" / "execution.jsonl")
             self.assertEqual(settings.failure_log_path, root / "runtime" / "failures.jsonl")
             self.assertEqual(settings.artifact_root_path, root / "runtime" / "artifacts")
-            self.assertEqual(settings.main2_returns_csv_path, root / "data" / "demo.csv")
-            self.assertEqual(settings.main2_compare_detail_csv_path, root / "runtime" / "artifacts" / "baseline_detail.csv")
             self.assertEqual(
                 settings.allowed_origins,
                 ("https://wealth-first-advisor.vercel.app", "https://preview.example.com"),
@@ -151,7 +147,7 @@ class TradingViewBridgeTests(unittest.TestCase):
 
             with TestClient(app) as client:
                 response = client.options(
-                    "/api/pipeline/launch",
+                    "/api/dashboard",
                     headers={
                         "Origin": "https://wealth-first-advisor-git-main-ch0002ic-prog.vercel.app",
                         "Access-Control-Request-Method": "GET",
@@ -607,236 +603,6 @@ class TradingViewBridgeTests(unittest.TestCase):
             self.assertEqual(execution_payload["rows"][0]["order_count"], 2)
             self.assertEqual(execution_payload["rows"][0]["execution_mode"], "paper")
 
-    def test_pipeline_endpoints_return_main2_artifact_data(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            event_log_path = Path(temp_dir) / "events.jsonl"
-            artifact_root_path = Path(temp_dir) / "artifacts"
-            artifact_root_path.mkdir(parents=True, exist_ok=True)
-
-            summary_payload = {
-                "overall": {
-                    "rows": 6,
-                    "policy_beats_static_hold_rows": 4,
-                    "policy_beats_optimizer_rows": 6,
-                    "mean_policy_total_return": 0.21,
-                    "mean_delta_total_return_vs_static_hold": 0.03,
-                    "mean_delta_total_return_vs_optimizer": 0.19,
-                },
-                "weak_rows": {
-                    "worst_vs_static_hold": [
-                        {
-                            "split": "chrono",
-                            "seed": 7,
-                            "fold": "fold_01",
-                            "phase": "test",
-                            "delta_total_return_vs_static_hold": -0.01,
-                        }
-                    ]
-                },
-            }
-            comparison_payload = {
-                "shared_rows": 6,
-                "mean_policy_total_return_diff": 0.012,
-                "main2_win_rows": 4,
-                "current_win_rows": 2,
-            }
-            detail_csv = (
-                "split,seed,fold,phase,policy_total_return,delta_total_return_vs_static_hold\n"
-                "chrono,7,fold_01,test,0.2,-0.01\n"
-                "regime,7,fold_01,validation,0.24,0.03\n"
-            )
-
-            (artifact_root_path / "main2_demo_summary.json").write_text(json.dumps(summary_payload), encoding="utf-8")
-            (artifact_root_path / "main2_demo_vs_current_best_summary.json").write_text(json.dumps(comparison_payload), encoding="utf-8")
-            (artifact_root_path / "main2_demo_detail.csv").write_text(detail_csv, encoding="utf-8")
-
-            app = create_app(
-                BridgeSettings(
-                    event_log_path=event_log_path,
-                    normalize_on_ingest=False,
-                    worker_poll_interval_seconds=0.05,
-                    artifact_root_path=artifact_root_path,
-                )
-            )
-
-            with TestClient(app) as client:
-                experiments_response = client.get("/api/pipeline/experiments?limit=5")
-                experiment_response = client.get("/api/pipeline/experiments/main2_demo?detail_limit=10")
-
-            self.assertEqual(experiments_response.status_code, 200)
-            self.assertEqual(experiment_response.status_code, 200)
-            experiments_payload = experiments_response.json()
-            experiment_payload = experiment_response.json()
-            self.assertEqual(experiments_payload["available_experiment_count"], 1)
-            self.assertEqual(experiments_payload["recommended_experiment_id"], "main2_demo")
-            self.assertEqual(experiments_payload["experiments"][0]["comparison_metrics"]["mean_policy_total_return_diff"], 0.012)
-            self.assertEqual(experiment_payload["experiment"]["artifact_id"], "main2_demo")
-            self.assertEqual(experiment_payload["detail"]["row_count"], 2)
-            self.assertEqual(experiment_payload["detail"]["rows"][0]["split"], "chrono")
-
-    def test_pipeline_launch_endpoints_start_and_report_job(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            event_log_path = Path(temp_dir) / "events.jsonl"
-            artifact_root_path = Path(temp_dir) / "artifacts"
-            returns_csv_path = Path(temp_dir) / "demo_sleeves.csv"
-            artifact_root_path.mkdir(parents=True, exist_ok=True)
-            returns_csv_path.write_text(
-                "date,SPY_BENCHMARK\n2026-01-01,0.01\n2026-01-02,-0.02\n2026-01-05,0.015\n",
-                encoding="utf-8",
-            )
-
-            class _FakeCompletedProcess:
-                def __init__(self, command, cwd, stdout, stderr, text):
-                    self.command = command
-                    self.cwd = cwd
-                    self.pid = 43210
-                    self.returncode = None
-                    stdout.write("fake main2 completed\n")
-                    stdout.flush()
-
-                    progress_log_path = Path(command[command.index("--progress-log") + 1])
-                    progress_log_path.write_text(
-                        "\n".join(
-                            [
-                                json.dumps(
-                                    {
-                                        "event_type": "run_started",
-                                        "timestamp": "2026-01-01T00:00:00+00:00",
-                                        "total_folds": 2,
-                                    }
-                                ),
-                                json.dumps(
-                                    {
-                                        "event_type": "fold_started",
-                                        "timestamp": "2026-01-01T00:00:01+00:00",
-                                        "split": "chrono",
-                                        "seed": 7,
-                                        "fold": "fold_01",
-                                        "completed_folds": 0,
-                                        "total_folds": 2,
-                                    }
-                                ),
-                                json.dumps(
-                                    {
-                                        "event_type": "training_checkpoint",
-                                        "timestamp": "2026-01-01T00:00:02+00:00",
-                                        "split": "chrono",
-                                        "seed": 7,
-                                        "fold": "fold_01",
-                                        "completed_folds": 0,
-                                        "total_folds": 2,
-                                        "step": 64,
-                                        "train_steps": 128,
-                                        "progress_fraction": 0.5,
-                                        "validation_score": 0.11,
-                                        "best_validation_score": 0.13,
-                                        "epsilon": 0.41,
-                                        "replay_size": 96,
-                                        "episode_reset_count": 3,
-                                        "validation_slice_scores": [0.07, 0.11, 0.15],
-                                        "latest_loss": 0.02,
-                                        "checkpoint_improved": False,
-                                    }
-                                ),
-                                json.dumps(
-                                    {
-                                        "event_type": "fold_completed",
-                                        "timestamp": "2026-01-01T00:00:03+00:00",
-                                        "split": "chrono",
-                                        "seed": 7,
-                                        "fold": "fold_01",
-                                        "completed_folds": 1,
-                                        "total_folds": 2,
-                                        "runtime_seconds": 1.5,
-                                        "validation_total_return": 0.08,
-                                        "test_total_return": 0.05,
-                                        "validation_average_spy_weight": 0.62,
-                                        "test_average_spy_weight": 0.59,
-                                        "validation_average_turnover": 0.04,
-                                        "test_average_turnover": 0.03,
-                                    }
-                                ),
-                                json.dumps(
-                                    {
-                                        "event_type": "run_completed",
-                                        "timestamp": "2026-01-01T00:00:04+00:00",
-                                        "completed_folds": 2,
-                                        "total_folds": 2,
-                                    }
-                                ),
-                            ]
-                        )
-                        + "\n",
-                        encoding="utf-8",
-                    )
-
-                def poll(self):
-                    if self.returncode is None:
-                        self.returncode = 0
-                    return self.returncode
-
-                def wait(self, timeout=None):
-                    return self.poll()
-
-                def terminate(self):
-                    self.returncode = -15
-
-                def kill(self):
-                    self.returncode = -9
-
-            with mock.patch("wealth_first.tradingview_bridge.subprocess.Popen", side_effect=_FakeCompletedProcess) as popen_mock:
-                app = create_app(
-                    BridgeSettings(
-                        event_log_path=event_log_path,
-                        normalize_on_ingest=False,
-                        worker_poll_interval_seconds=0.05,
-                        artifact_root_path=artifact_root_path,
-                        main2_returns_csv_path=returns_csv_path,
-                    )
-                )
-
-                with TestClient(app) as client:
-                    status_response = client.get("/api/pipeline/launch")
-                    launch_response = client.post(
-                        "/api/pipeline/launch",
-                        json={"preset_id": "quick-probe", "artifact_label": "Smoke Check"},
-                    )
-                    latest_response = client.get("/api/pipeline/launch")
-
-            self.assertEqual(status_response.status_code, 200)
-            self.assertEqual(launch_response.status_code, 200)
-            self.assertTrue(popen_mock.called)
-
-            launch_payload = launch_response.json()
-            self.assertEqual(launch_payload["status"], "accepted")
-            self.assertEqual(launch_payload["job"]["preset_id"], "quick-probe")
-            self.assertTrue(launch_payload["job"]["artifact_id"].startswith("main2_smoke_check_"))
-            self.assertIn("wealth_first.main2", launch_payload["job"]["command"])
-            self.assertIn("--progress-log", launch_payload["job"]["command"])
-
-            latest_payload = latest_response.json()
-            self.assertTrue(latest_payload["can_launch"])
-            self.assertEqual(latest_payload["latest_job"]["status"], "completed")
-            self.assertEqual(latest_payload["latest_job"]["exit_code"], 0)
-            self.assertEqual(latest_payload["presets"][0]["id"], "quick-probe")
-            self.assertIn("fake main2 completed", "\n".join(latest_payload["latest_job"]["log_tail"]))
-            self.assertTrue(latest_payload["latest_job"]["progress_log_exists"])
-            self.assertEqual(latest_payload["latest_job"]["progress"]["latest_event_type"], "run_completed")
-            self.assertEqual(latest_payload["latest_job"]["progress"]["completed_folds"], 2)
-            self.assertEqual(latest_payload["latest_job"]["progress"]["total_folds"], 2)
-            self.assertEqual(latest_payload["latest_job"]["progress"]["overall_progress_fraction"], 1.0)
-            self.assertEqual(latest_payload["latest_job"]["progress"]["active_fold"], "fold_01")
-            self.assertEqual(latest_payload["latest_job"]["progress"]["latest_validation_score"], 0.11)
-            self.assertEqual(latest_payload["latest_job"]["progress"]["latest_epsilon"], 0.41)
-            self.assertEqual(latest_payload["latest_job"]["progress"]["latest_replay_size"], 96)
-            self.assertEqual(latest_payload["latest_job"]["progress"]["latest_episode_reset_count"], 3)
-            self.assertEqual(latest_payload["latest_job"]["progress"]["validation_slice_scores"], [0.07, 0.11, 0.15])
-            self.assertEqual(len(latest_payload["latest_job"]["progress"]["checkpoint_history"]), 1)
-            self.assertEqual(latest_payload["latest_job"]["progress"]["checkpoint_history"][0]["step"], 64)
-            self.assertEqual(
-                latest_payload["latest_job"]["progress"]["latest_fold_metrics"]["test_total_return"],
-                0.05,
-            )
 
     def test_webhook_accepts_strategy_alert_payload_for_paper_trade(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

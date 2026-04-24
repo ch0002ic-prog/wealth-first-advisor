@@ -1,0 +1,461 @@
+{
+  "case": "main4_gate009_f3_s10",
+  "seeds": [
+    7,
+    17,
+    27,
+    37,
+    47,
+    57,
+    67,
+    77,
+    87,
+    97
+  ],
+  "n_rows": 30,
+  "mean_test_relative": 0.001555774467059167,
+  "beat_hold_fraction": 0.3333333333333333,
+  "active_fraction": 0.6666666666666666,
+  "mean_turnover": 3.0735285945840183e-05,
+  "seed_variability": {
+    "metric": "policy_relative_total_return_mean_by_seed",
+    "n_seeds": 10,
+    "mean_of_seed_means": 0.0015557744670591667,
+    "std_of_seed_means": 0.0,
+    "min_seed_mean": 0.0015557744670591667,
+    "max_seed_mean": 0.0015557744670591667
+  },
+  "parameter_snapshot": {
+    "mean_signal_scale": 0.29999999999999993,
+    "std_signal_scale": 0.10801234497346435,
+    "mean_signal_bias": 0.10355963911056382,
+    "std_signal_bias": 0.005388525311225396
+  },
+  "action_rate_summary": {
+    "n_active_rows": 20,
+    "n_total_rows": 30,
+    "inactive_rows": 10
+  },
+  "seed_diagnostics": [
+    {
+      "seed": 7,
+      "n_rows": 3,
+      "mean_relative": 0.0015557744670591667,
+      "mean_absolute": 0.3284980367776047,
+      "active_fraction": 0.6666666666666666,
+      "mean_turnover": 3.0735285945840183e-05,
+      "mean_spy_weight": 1.0090108196006726,
+      "mean_signal_scale": 0.3,
+      "mean_signal_bias": 0.1035596391105638,
+      "action_rate_summary": {
+        "n_active_folds": 2,
+        "n_total_folds": 3,
+        "inactive_folds": 1
+      },
+      "parameter_snapshot": {
+        "gate": "009",
+        "n_folds": 3,
+        "signal_scale_values": [
+          0.25,
+          0.45,
+          0.2
+        ],
+        "signal_bias_values": [
+          0.1,
+          0.0995041322314049,
+          0.1111747851002865
+        ],
+        "config_medium_capacity": {
+          "min_spy_weight": 0.8,
+          "max_spy_weight": 1.05,
+          "initial_spy_weight": 1.0,
+          "action_smoothing": 0.5,
+          "no_trade_band": 0.02,
+          "transaction_cost_bps": 5.0,
+          "slippage_bps": 5.0,
+          "ridge_l2": 1.0,
+          "use_multiplicative_signal": true,
+          "quantile_loss_tau": null
+        }
+      }
+    },
+    {
+      "seed": 17,
+      "n_rows": 3,
+      "mean_relative": 0.0015557744670591667,
+      "mean_absolute": 0.3284980367776047,
+      "active_fraction": 0.6666666666666666,
+      "mean_turnover": 3.0735285945840183e-05,
+      "mean_spy_weight": 1.0090108196006726,
+      "mean_signal_scale": 0.3,
+      "mean_signal_bias": 0.1035596391105638,
+      "action_rate_summary": {
+        "n_active_folds": 2,
+        "n_total_folds": 3,
+        "inactive_folds": 1
+      },
+      "parameter_snapshot": {
+        "gate": "009",
+        "n_folds": 3,
+        "signal_scale_values": [
+          0.25,
+          0.45,
+          0.2
+        ],
+        "signal_bias_values": [
+          0.1,
+          0.0995041322314049,
+          0.1111747851002865
+        ],
+        "config_medium_capacity": {
+          "min_spy_weight": 0.8,
+          "max_spy_weight": 1.05,
+          "initial_spy_weight": 1.0,
+          "action_smoothing": 0.5,
+          "no_trade_band": 0.02,
+          "transaction_cost_bps": 5.0,
+          "slippage_bps": 5.0,
+          "ridge_l2": 1.0,
+          "use_multiplicative_signal": true,
+          "quantile_loss_tau": null
+        }
+      }
+    },
+    {
+      "seed": 27,
+      "n_rows": 3,
+      "mean_relative": 0.0015557744670591667,
+      "mean_absolute": 0.3284980367776047,
+      "active_fraction": 0.6666666666666666,
+      "mean_turnover": 3.0735285945840183e-05,
+      "mean_spy_weight": 1.0090108196006726,
+      "mean_signal_scale": 0.3,
+      "mean_signal_bias": 0.1035596391105638,
+      "action_rate_summary": {
+        "n_active_folds": 2,
+        "n_total_folds": 3,
+        "inactive_folds": 1
+      },
+      "parameter_snapshot": {
+        "gate": "009",
+        "n_folds": 3,
+        "signal_scale_values": [
+          0.25,
+          0.45,
+          0.2
+        ],
+        "signal_bias_values": [
+          0.1,
+          0.0995041322314049,
+          0.1111747851002865
+        ],
+        "config_medium_capacity": {
+          "min_spy_weight": 0.8,
+          "max_spy_weight": 1.05,
+          "initial_spy_weight": 1.0,
+          "action_smoothing": 0.5,
+          "no_trade_band": 0.02,
+          "transaction_cost_bps": 5.0,
+          "slippage_bps": 5.0,
+          "ridge_l2": 1.0,
+          "use_multiplicative_signal": true,
+          "quantile_loss_tau": null
+        }
+      }
+    },
+    {
+      "seed": 37,
+      "n_rows": 3,
+      "mean_relative": 0.0015557744670591667,
+      "mean_absolute": 0.3284980367776047,
+      "active_fraction": 0.6666666666666666,
+      "mean_turnover": 3.0735285945840183e-05,
+      "mean_spy_weight": 1.0090108196006726,
+      "mean_signal_scale": 0.3,
+      "mean_signal_bias": 0.1035596391105638,
+      "action_rate_summary": {
+        "n_active_folds": 2,
+        "n_total_folds": 3,
+        "inactive_folds": 1
+      },
+      "parameter_snapshot": {
+        "gate": "009",
+        "n_folds": 3,
+        "signal_scale_values": [
+          0.25,
+          0.45,
+          0.2
+        ],
+        "signal_bias_values": [
+          0.1,
+          0.0995041322314049,
+          0.1111747851002865
+        ],
+        "config_medium_capacity": {
+          "min_spy_weight": 0.8,
+          "max_spy_weight": 1.05,
+          "initial_spy_weight": 1.0,
+          "action_smoothing": 0.5,
+          "no_trade_band": 0.02,
+          "transaction_cost_bps": 5.0,
+          "slippage_bps": 5.0,
+          "ridge_l2": 1.0,
+          "use_multiplicative_signal": true,
+          "quantile_loss_tau": null
+        }
+      }
+    },
+    {
+      "seed": 47,
+      "n_rows": 3,
+      "mean_relative": 0.0015557744670591667,
+      "mean_absolute": 0.3284980367776047,
+      "active_fraction": 0.6666666666666666,
+      "mean_turnover": 3.0735285945840183e-05,
+      "mean_spy_weight": 1.0090108196006726,
+      "mean_signal_scale": 0.3,
+      "mean_signal_bias": 0.1035596391105638,
+      "action_rate_summary": {
+        "n_active_folds": 2,
+        "n_total_folds": 3,
+        "inactive_folds": 1
+      },
+      "parameter_snapshot": {
+        "gate": "009",
+        "n_folds": 3,
+        "signal_scale_values": [
+          0.25,
+          0.45,
+          0.2
+        ],
+        "signal_bias_values": [
+          0.1,
+          0.0995041322314049,
+          0.1111747851002865
+        ],
+        "config_medium_capacity": {
+          "min_spy_weight": 0.8,
+          "max_spy_weight": 1.05,
+          "initial_spy_weight": 1.0,
+          "action_smoothing": 0.5,
+          "no_trade_band": 0.02,
+          "transaction_cost_bps": 5.0,
+          "slippage_bps": 5.0,
+          "ridge_l2": 1.0,
+          "use_multiplicative_signal": true,
+          "quantile_loss_tau": null
+        }
+      }
+    },
+    {
+      "seed": 57,
+      "n_rows": 3,
+      "mean_relative": 0.0015557744670591667,
+      "mean_absolute": 0.3284980367776047,
+      "active_fraction": 0.6666666666666666,
+      "mean_turnover": 3.0735285945840183e-05,
+      "mean_spy_weight": 1.0090108196006726,
+      "mean_signal_scale": 0.3,
+      "mean_signal_bias": 0.1035596391105638,
+      "action_rate_summary": {
+        "n_active_folds": 2,
+        "n_total_folds": 3,
+        "inactive_folds": 1
+      },
+      "parameter_snapshot": {
+        "gate": "009",
+        "n_folds": 3,
+        "signal_scale_values": [
+          0.25,
+          0.45,
+          0.2
+        ],
+        "signal_bias_values": [
+          0.1,
+          0.0995041322314049,
+          0.1111747851002865
+        ],
+        "config_medium_capacity": {
+          "min_spy_weight": 0.8,
+          "max_spy_weight": 1.05,
+          "initial_spy_weight": 1.0,
+          "action_smoothing": 0.5,
+          "no_trade_band": 0.02,
+          "transaction_cost_bps": 5.0,
+          "slippage_bps": 5.0,
+          "ridge_l2": 1.0,
+          "use_multiplicative_signal": true,
+          "quantile_loss_tau": null
+        }
+      }
+    },
+    {
+      "seed": 67,
+      "n_rows": 3,
+      "mean_relative": 0.0015557744670591667,
+      "mean_absolute": 0.3284980367776047,
+      "active_fraction": 0.6666666666666666,
+      "mean_turnover": 3.0735285945840183e-05,
+      "mean_spy_weight": 1.0090108196006726,
+      "mean_signal_scale": 0.3,
+      "mean_signal_bias": 0.1035596391105638,
+      "action_rate_summary": {
+        "n_active_folds": 2,
+        "n_total_folds": 3,
+        "inactive_folds": 1
+      },
+      "parameter_snapshot": {
+        "gate": "009",
+        "n_folds": 3,
+        "signal_scale_values": [
+          0.25,
+          0.45,
+          0.2
+        ],
+        "signal_bias_values": [
+          0.1,
+          0.0995041322314049,
+          0.1111747851002865
+        ],
+        "config_medium_capacity": {
+          "min_spy_weight": 0.8,
+          "max_spy_weight": 1.05,
+          "initial_spy_weight": 1.0,
+          "action_smoothing": 0.5,
+          "no_trade_band": 0.02,
+          "transaction_cost_bps": 5.0,
+          "slippage_bps": 5.0,
+          "ridge_l2": 1.0,
+          "use_multiplicative_signal": true,
+          "quantile_loss_tau": null
+        }
+      }
+    },
+    {
+      "seed": 77,
+      "n_rows": 3,
+      "mean_relative": 0.0015557744670591667,
+      "mean_absolute": 0.3284980367776047,
+      "active_fraction": 0.6666666666666666,
+      "mean_turnover": 3.0735285945840183e-05,
+      "mean_spy_weight": 1.0090108196006726,
+      "mean_signal_scale": 0.3,
+      "mean_signal_bias": 0.1035596391105638,
+      "action_rate_summary": {
+        "n_active_folds": 2,
+        "n_total_folds": 3,
+        "inactive_folds": 1
+      },
+      "parameter_snapshot": {
+        "gate": "009",
+        "n_folds": 3,
+        "signal_scale_values": [
+          0.25,
+          0.45,
+          0.2
+        ],
+        "signal_bias_values": [
+          0.1,
+          0.0995041322314049,
+          0.1111747851002865
+        ],
+        "config_medium_capacity": {
+          "min_spy_weight": 0.8,
+          "max_spy_weight": 1.05,
+          "initial_spy_weight": 1.0,
+          "action_smoothing": 0.5,
+          "no_trade_band": 0.02,
+          "transaction_cost_bps": 5.0,
+          "slippage_bps": 5.0,
+          "ridge_l2": 1.0,
+          "use_multiplicative_signal": true,
+          "quantile_loss_tau": null
+        }
+      }
+    },
+    {
+      "seed": 87,
+      "n_rows": 3,
+      "mean_relative": 0.0015557744670591667,
+      "mean_absolute": 0.3284980367776047,
+      "active_fraction": 0.6666666666666666,
+      "mean_turnover": 3.0735285945840183e-05,
+      "mean_spy_weight": 1.0090108196006726,
+      "mean_signal_scale": 0.3,
+      "mean_signal_bias": 0.1035596391105638,
+      "action_rate_summary": {
+        "n_active_folds": 2,
+        "n_total_folds": 3,
+        "inactive_folds": 1
+      },
+      "parameter_snapshot": {
+        "gate": "009",
+        "n_folds": 3,
+        "signal_scale_values": [
+          0.25,
+          0.45,
+          0.2
+        ],
+        "signal_bias_values": [
+          0.1,
+          0.0995041322314049,
+          0.1111747851002865
+        ],
+        "config_medium_capacity": {
+          "min_spy_weight": 0.8,
+          "max_spy_weight": 1.05,
+          "initial_spy_weight": 1.0,
+          "action_smoothing": 0.5,
+          "no_trade_band": 0.02,
+          "transaction_cost_bps": 5.0,
+          "slippage_bps": 5.0,
+          "ridge_l2": 1.0,
+          "use_multiplicative_signal": true,
+          "quantile_loss_tau": null
+        }
+      }
+    },
+    {
+      "seed": 97,
+      "n_rows": 3,
+      "mean_relative": 0.0015557744670591667,
+      "mean_absolute": 0.3284980367776047,
+      "active_fraction": 0.6666666666666666,
+      "mean_turnover": 3.0735285945840183e-05,
+      "mean_spy_weight": 1.0090108196006726,
+      "mean_signal_scale": 0.3,
+      "mean_signal_bias": 0.1035596391105638,
+      "action_rate_summary": {
+        "n_active_folds": 2,
+        "n_total_folds": 3,
+        "inactive_folds": 1
+      },
+      "parameter_snapshot": {
+        "gate": "009",
+        "n_folds": 3,
+        "signal_scale_values": [
+          0.25,
+          0.45,
+          0.2
+        ],
+        "signal_bias_values": [
+          0.1,
+          0.0995041322314049,
+          0.1111747851002865
+        ],
+        "config_medium_capacity": {
+          "min_spy_weight": 0.8,
+          "max_spy_weight": 1.05,
+          "initial_spy_weight": 1.0,
+          "action_smoothing": 0.5,
+          "no_trade_band": 0.02,
+          "transaction_cost_bps": 5.0,
+          "slippage_bps": 5.0,
+          "ridge_l2": 1.0,
+          "use_multiplicative_signal": true,
+          "quantile_loss_tau": null
+        }
+      }
+    }
+  ]
+}

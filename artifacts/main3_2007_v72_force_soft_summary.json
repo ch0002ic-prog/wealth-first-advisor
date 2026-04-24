@@ -1,0 +1,50 @@
+{
+  "overall": {
+    "rows": 18,
+    "mean_policy_total_return": 0.30120865807056224,
+    "mean_static_hold_total_return": 0.3226452488347388,
+    "mean_policy_relative_total_return": -0.016220356915058902,
+    "mean_policy_cash_weight": 0.08116343354000992,
+    "mean_policy_borrow_weight": 0.0,
+    "mean_policy_turnover": 0.002482530586210256
+  },
+  "by_phase": {
+    "test": {
+      "rows": 9,
+      "mean_policy_total_return": 0.29726069909579295,
+      "mean_static_hold_total_return": 0.32637027124619533,
+      "mean_policy_relative_total_return": -0.0222129210866669,
+      "beat_static_rate": 0.0
+    },
+    "validation": {
+      "rows": 9,
+      "mean_policy_total_return": 0.3051566170453316,
+      "mean_static_hold_total_return": 0.3189202264232822,
+      "mean_policy_relative_total_return": -0.010227792743450906,
+      "beat_static_rate": 0.1111111111111111
+    }
+  },
+  "diagnostics": {
+    "mean_train_diag_passed_candidates": 187.11111111111111,
+    "mean_train_diag_coarse_candidates": 220.0,
+    "mean_train_diag_refine_candidates": 180.0,
+    "mean_train_diag_gate_fail_tail_cash": 211.55555555555554,
+    "mean_train_diag_gate_fail_tail_relative": 41.333333333333336,
+    "mean_train_diag_gate_fail_stress_relative": 4.0,
+    "mean_train_diag_gate_fail_full_relative": 0.0,
+    "mean_train_diag_gate_fail_turnover": 17.555555555555557,
+    "mean_train_diag_gate_fail_inactive": 164.44444444444446,
+    "mean_train_diag_rescue_gate_used": 0.0,
+    "mean_train_diag_near_lower_bound_count": 0.2222222222222222,
+    "mean_train_diag_near_upper_bound_count": 0.8888888888888888,
+    "mean_train_diag_tail_calm_share": 0.4783333333333333,
+    "mean_train_diag_tail_drawdown_share": 0.23500000000000001,
+    "mean_train_diag_tail_high_vol_share": 0.13,
+    "mean_train_diag_objective_weight_full": 0.41666666666666663,
+    "mean_train_diag_objective_weight_tail": 0.38333333333333336,
+    "mean_train_diag_objective_weight_stress": 0.20000000000000004,
+    "mean_train_diag_tail_rows": 200.0,
+    "mean_train_diag_stress_rows": 104.66666666666667,
+    "fallback_rate": 0.0
+  }
+}
