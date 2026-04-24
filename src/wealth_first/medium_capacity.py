@@ -162,6 +162,7 @@ def _simulate_signal_path(
         "relative_return": float(relative_return),
         "worst_daily_relative_return": float(np.min(relative_daily_returns)) if len(relative_daily_returns) > 0 else 0.0,
         "max_relative_drawdown": max_relative_drawdown,
+        "relative_daily_returns": relative_daily_returns.tolist(),
         "average_weight": float(np.mean(weights)),
         "average_turnover": float(np.mean(turnovers)),
         "signal_abs_p95": float(np.quantile(signal_abs, 0.95)) if len(signal_abs) > 0 else 0.0,

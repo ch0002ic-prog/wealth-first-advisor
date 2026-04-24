@@ -79,7 +79,14 @@ def _summary_paths(case: Case, run_dir: Path) -> tuple[Path, Path]:
     return run_dir / f"{stem}_summary.csv", run_dir / f"{stem}_detailed.json"
 
 
-def _run_case(profile: Profile, case: Case, force: bool) -> dict[str, Any]:
+def _run_case(
+    profile: Profile,
+    case: Case,
+    force: bool,
+    path_bootstrap_reps: int,
+    path_bootstrap_block_size: int,
+    path_bootstrap_seed: int,
+) -> dict[str, Any]:
     run_name = (
         f"{case.profile}_c{int(case.transaction_cost_bps)}"
         f"_s{case.seed}_g{case.gate}"
@@ -130,6 +137,12 @@ def _run_case(profile: Profile, case: Case, force: bool) -> dict[str, Any]:
             str(case.min_robust_min_relative),
             "--min-active-fraction",
             str(case.min_active_fraction),
+            "--path-bootstrap-reps",
+            str(path_bootstrap_reps),
+            "--path-bootstrap-block-size",
+            str(path_bootstrap_block_size),
+            "--path-bootstrap-seed",
+            str(path_bootstrap_seed + case.seed),
         ]
         result = subprocess.run(
             cmd,
@@ -174,6 +187,24 @@ def _run_case(profile: Profile, case: Case, force: bool) -> dict[str, Any]:
         ),
         "worst_max_relative_drawdown": float(
             fold_summary.get("test_max_relative_drawdown", pd.Series([0.0])).max()
+        ),
+        "path_bootstrap_mean_test_relative_p05": float(
+            metrics.get("path_bootstrap_mean_test_relative_p05", float("nan"))
+        ),
+        "path_bootstrap_mean_test_relative_p50": float(
+            metrics.get("path_bootstrap_mean_test_relative_p50", float("nan"))
+        ),
+        "path_bootstrap_mean_test_relative_p95": float(
+            metrics.get("path_bootstrap_mean_test_relative_p95", float("nan"))
+        ),
+        "path_bootstrap_robust_min_test_relative_p05": float(
+            metrics.get("path_bootstrap_robust_min_test_relative_p05", float("nan"))
+        ),
+        "path_bootstrap_robust_min_test_relative_p50": float(
+            metrics.get("path_bootstrap_robust_min_test_relative_p50", float("nan"))
+        ),
+        "path_bootstrap_robust_min_test_relative_p95": float(
+            metrics.get("path_bootstrap_robust_min_test_relative_p95", float("nan"))
         ),
         "overall_gate_passed": bool(gate_checks.get("overall_passed", False)),
         "validation_gate_passed": bool(gate_detail.get("passed", False)),
@@ -347,6 +378,24 @@ def _build_profile_summary(
                 "max_seed_std_test_relative": float(seed_std_rel.max()),
                 "mean_seed_std_robust_min": float(seed_std_robust.mean()),
                 "max_seed_std_robust_min": float(seed_std_robust.max()),
+                "mean_path_bootstrap_mean_test_relative_p05": float(
+                    grp_sorted["path_bootstrap_mean_test_relative_p05"].mean()
+                ),
+                "mean_path_bootstrap_mean_test_relative_p50": float(
+                    grp_sorted["path_bootstrap_mean_test_relative_p50"].mean()
+                ),
+                "mean_path_bootstrap_mean_test_relative_p95": float(
+                    grp_sorted["path_bootstrap_mean_test_relative_p95"].mean()
+                ),
+                "mean_path_bootstrap_robust_min_test_relative_p05": float(
+                    grp_sorted["path_bootstrap_robust_min_test_relative_p05"].mean()
+                ),
+                "mean_path_bootstrap_robust_min_test_relative_p50": float(
+                    grp_sorted["path_bootstrap_robust_min_test_relative_p50"].mean()
+                ),
+                "mean_path_bootstrap_robust_min_test_relative_p95": float(
+                    grp_sorted["path_bootstrap_robust_min_test_relative_p95"].mean()
+                ),
                 **bootstrap,
                 "min_gate_margin": float(
                     (
@@ -456,6 +505,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-worst-relative-drawdown", type=float, default=0.030)
     parser.add_argument("--bootstrap-reps", type=int, default=400)
     parser.add_argument("--bootstrap-seed", type=int, default=12345)
+    parser.add_argument("--path-bootstrap-reps", type=int, default=0)
+    parser.add_argument("--path-bootstrap-block-size", type=int, default=20)
+    parser.add_argument("--path-bootstrap-seed", type=int, default=12345)
     args = parser.parse_args(argv)
 
     if not PYTHON_BIN.exists():
@@ -475,7 +527,14 @@ def main(argv: list[str] | None = None) -> int:
             f"\n{case.profile:14s} seed={case.seed:2d} "
             f"cost={case.transaction_cost_bps + case.slippage_bps:4.1f}bps"
         )
-        row = _run_case(profile=profile, case=case, force=args.force)
+        row = _run_case(
+            profile=profile,
+            case=case,
+            force=args.force,
+            path_bootstrap_reps=int(args.path_bootstrap_reps),
+            path_bootstrap_block_size=int(args.path_bootstrap_block_size),
+            path_bootstrap_seed=int(args.path_bootstrap_seed),
+        )
         rows.append(row)
         print(
             f"  rel={row['mean_test_relative']:+.6f} "
@@ -535,6 +594,11 @@ def main(argv: list[str] | None = None) -> int:
         "bootstrap": {
             "reps": int(args.bootstrap_reps),
             "seed": int(args.bootstrap_seed),
+        },
+        "path_bootstrap": {
+            "reps": int(args.path_bootstrap_reps),
+            "block_size": int(args.path_bootstrap_block_size),
+            "seed": int(args.path_bootstrap_seed),
         },
         "frontier_report": _build_frontier_report(
             profile_summary=profile_summary,

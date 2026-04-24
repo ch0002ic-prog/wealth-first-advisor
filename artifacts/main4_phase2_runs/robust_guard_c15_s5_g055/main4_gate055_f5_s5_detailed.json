@@ -1,12 +1,12 @@
 {
   "fingerprint": {
-    "git_commit": "7bad019921053abfdb5a75051dc0c296d32bc7e2",
+    "git_commit": "50bed06cbec55b281a88ad8357d4adf8a8e90699",
     "numpy_version": "2.4.4",
     "pandas_version": "3.0.2",
     "python_version": "3.14.3",
     "python_version_prefix": "3.14",
-    "main4_sha256": "f897a92832984dea0b6ec4dd11207e12adf34f1388959c24998e6bdcd1e6c2a8",
-    "medium_capacity_sha256": "c5bc364175d5dfee84ffc9aa9aad5967d07b740a281a22a62ecc8d8ddf71cce0"
+    "main4_sha256": "64c31179ebf95429eeb0714c33991e9b76e9e8679df466515bf0987857db0cb1",
+    "medium_capacity_sha256": "fc7a2724737d2fec886462dcbb1ef1cfdb06cd9cf803a5aaaa705e6dc1d8806a"
   },
   "config": {
     "min_validation_threshold": 0.0055,
@@ -44,7 +44,18 @@
     "worst_max_relative_drawdown": 0.008310507139087098,
     "mean_validation_gate_suppression_rate": 0.9764705882352942,
     "mean_test_gate_suppression_rate": 0.9784482758620691,
-    "mean_test_executed_step_count": 10.0
+    "mean_test_executed_step_count": 10.0,
+    "path_bootstrap_mean_test_relative_p05": 0.0010679540514034103,
+    "path_bootstrap_mean_test_relative_p50": 0.004029897164029583,
+    "path_bootstrap_mean_test_relative_p95": 0.007074512521341505,
+    "path_bootstrap_robust_min_test_relative_p05": -0.007212376541339632,
+    "path_bootstrap_robust_min_test_relative_p50": -0.0010913395155618955,
+    "path_bootstrap_robust_min_test_relative_p95": 0.002155111608437622
+  },
+  "path_bootstrap": {
+    "reps": 300,
+    "block_size": 20,
+    "seed": 4247
   },
   "gate_checks": {
     "validation_threshold": {

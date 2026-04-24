@@ -139,6 +139,77 @@ def _compute_fingerprint() -> dict[str, str]:
     return fingerprint
 
 
+def _block_bootstrap_relative_return(
+    relative_daily_returns: np.ndarray,
+    block_size: int,
+    rng: np.random.Generator,
+) -> float:
+    """Sample daily relative returns in fixed blocks and return cumulative relative return."""
+    n = int(len(relative_daily_returns))
+    if n == 0:
+        return 0.0
+
+    if block_size <= 1:
+        idx = rng.integers(0, n, size=n)
+        sampled = relative_daily_returns[idx]
+    else:
+        starts = rng.integers(0, n, size=max(1, int(np.ceil(n / block_size))))
+        chunks = []
+        for start in starts:
+            end = min(start + block_size, n)
+            chunk = relative_daily_returns[start:end]
+            if len(chunk) < block_size:
+                remainder = block_size - len(chunk)
+                chunk = np.concatenate([chunk, relative_daily_returns[:remainder]])
+            chunks.append(chunk)
+        sampled = np.concatenate(chunks)[:n]
+
+    return float(np.prod(1.0 + sampled) - 1.0)
+
+
+def _compute_path_bootstrap_metrics(
+    fold_relative_daily_returns: list[list[float]],
+    reps: int,
+    block_size: int,
+    seed: int,
+) -> dict[str, float]:
+    """Bootstrap path-level uncertainty for mean and robust-min relative returns."""
+    if reps <= 0 or not fold_relative_daily_returns:
+        return {
+            "path_bootstrap_mean_test_relative_p05": float("nan"),
+            "path_bootstrap_mean_test_relative_p50": float("nan"),
+            "path_bootstrap_mean_test_relative_p95": float("nan"),
+            "path_bootstrap_robust_min_test_relative_p05": float("nan"),
+            "path_bootstrap_robust_min_test_relative_p50": float("nan"),
+            "path_bootstrap_robust_min_test_relative_p95": float("nan"),
+        }
+
+    rng = np.random.default_rng(seed)
+    fold_arrays = [np.asarray(values, dtype=float) for values in fold_relative_daily_returns]
+    mean_samples = np.empty(reps, dtype=float)
+    robust_min_samples = np.empty(reps, dtype=float)
+
+    for rep in range(reps):
+        fold_returns = np.array(
+            [
+                _block_bootstrap_relative_return(arr, block_size=block_size, rng=rng)
+                for arr in fold_arrays
+            ],
+            dtype=float,
+        )
+        mean_samples[rep] = float(np.mean(fold_returns))
+        robust_min_samples[rep] = float(np.min(fold_returns))
+
+    return {
+        "path_bootstrap_mean_test_relative_p05": float(np.quantile(mean_samples, 0.05)),
+        "path_bootstrap_mean_test_relative_p50": float(np.quantile(mean_samples, 0.50)),
+        "path_bootstrap_mean_test_relative_p95": float(np.quantile(mean_samples, 0.95)),
+        "path_bootstrap_robust_min_test_relative_p05": float(np.quantile(robust_min_samples, 0.05)),
+        "path_bootstrap_robust_min_test_relative_p50": float(np.quantile(robust_min_samples, 0.50)),
+        "path_bootstrap_robust_min_test_relative_p95": float(np.quantile(robust_min_samples, 0.95)),
+    }
+
+
 def _train_policy(
     spy_returns: pd.Series,
     cfg: Main4Config,
@@ -151,6 +222,7 @@ def _train_policy(
         metadata: Execution metadata
     """
     results = []
+    fold_relative_daily_returns: list[list[float]] = []
     features_df = _build_simple_features(spy_returns)
     splits = generate_walk_forward_splits(
         spy_returns.to_frame(name="SPY"),
@@ -226,6 +298,7 @@ def _train_policy(
                     "test_gate_suppression_rate": test_diag["gate_suppression_rate"],
                 }
             )
+            fold_relative_daily_returns.append(list(test_diag.get("relative_daily_returns", [])))
         except Exception as e:
             print(f"Error in fold {fold_idx}: {e}", file=sys.stderr)
 
@@ -233,6 +306,7 @@ def _train_policy(
     metadata = {
         "n_folds": cfg.n_folds,
         "config": asdict(cfg.medium_capacity_cfg),
+        "test_fold_relative_daily_returns": fold_relative_daily_returns,
     }
 
     return summary_df, metadata
@@ -263,6 +337,9 @@ def main(
     min_active_fraction: float = 0.01,
     gate_scale: str = "bps",
     fail_on_gate: bool = True,
+    path_bootstrap_reps: int = 0,
+    path_bootstrap_block_size: int = 20,
+    path_bootstrap_seed: int = 12345,
 ) -> int:
     """Run main4 orchestrator."""
     os.makedirs(output_dir, exist_ok=True)
@@ -347,6 +424,12 @@ def main(
         robust_min_test_relative=float(robust_min),
         active_fraction=float(active_fraction),
     )
+    path_bootstrap_metrics = _compute_path_bootstrap_metrics(
+        fold_relative_daily_returns=list(metadata.get("test_fold_relative_daily_returns", [])),
+        reps=int(path_bootstrap_reps),
+        block_size=int(path_bootstrap_block_size),
+        seed=int(path_bootstrap_seed),
+    )
 
     # Collect fingerprint
     fingerprint = _compute_fingerprint()
@@ -373,6 +456,12 @@ def main(
             "mean_validation_gate_suppression_rate": float(mean_validation_gate_suppression),
             "mean_test_gate_suppression_rate": float(mean_test_gate_suppression),
             "mean_test_executed_step_count": float(mean_test_executed_steps),
+            **path_bootstrap_metrics,
+        },
+        "path_bootstrap": {
+            "reps": int(path_bootstrap_reps),
+            "block_size": int(path_bootstrap_block_size),
+            "seed": int(path_bootstrap_seed),
         },
         "gate_checks": gate_checks,
     }
@@ -397,6 +486,14 @@ def main(
         file=sys.stderr,
     )
     print(f"Robust min: {robust_min:.6f}", file=sys.stderr)
+    if path_bootstrap_reps > 0:
+        print(
+            "Path bootstrap mean test relative "
+            f"p05/p50/p95={path_bootstrap_metrics['path_bootstrap_mean_test_relative_p05']:.6f}/"
+            f"{path_bootstrap_metrics['path_bootstrap_mean_test_relative_p50']:.6f}/"
+            f"{path_bootstrap_metrics['path_bootstrap_mean_test_relative_p95']:.6f}",
+            file=sys.stderr,
+        )
     print(
         f"Worst daily relative return: {worst_daily_relative:.6f}, "
         f"Worst max relative drawdown: {worst_max_relative_drawdown:.6f}",
@@ -479,6 +576,24 @@ if __name__ == "__main__":
         action="store_true",
         help="Do not fail process exit code when gate checks fail.",
     )
+    parser.add_argument(
+        "--path-bootstrap-reps",
+        type=int,
+        default=0,
+        help="Number of path-level block-bootstrap repetitions for uncertainty metrics.",
+    )
+    parser.add_argument(
+        "--path-bootstrap-block-size",
+        type=int,
+        default=20,
+        help="Block size for path-level bootstrap resampling of daily relative returns.",
+    )
+    parser.add_argument(
+        "--path-bootstrap-seed",
+        type=int,
+        default=12345,
+        help="Random seed for path-level bootstrap resampling.",
+    )
     args = parser.parse_args()
 
     exit_code = main(
@@ -506,5 +621,8 @@ if __name__ == "__main__":
         min_active_fraction=args.min_active_fraction,
         gate_scale=args.gate_scale,
         fail_on_gate=not args.no_fail_on_gate,
+        path_bootstrap_reps=args.path_bootstrap_reps,
+        path_bootstrap_block_size=args.path_bootstrap_block_size,
+        path_bootstrap_seed=args.path_bootstrap_seed,
     )
     sys.exit(exit_code)
