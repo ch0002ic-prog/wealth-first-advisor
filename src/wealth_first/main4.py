@@ -331,6 +331,8 @@ def main(
     max_signal_scale: float = 0.75,
     target_mode: str = "sign",
     feature_family: str = "baseline",
+    signal_model_family: str = "single_linear",
+    regime_drawdown_threshold: float = -0.08,
     min_spy_weight: float = 0.80,
     max_spy_weight: float = 1.05,
     initial_spy_weight: float = 1.0,
@@ -370,6 +372,8 @@ def main(
         max_signal_scale=max_signal_scale,
         target_mode=target_mode,
         feature_family=feature_family,
+        signal_model_family=signal_model_family,
+        regime_drawdown_threshold=regime_drawdown_threshold,
         action_smoothing=action_smoothing,
         no_trade_band=no_trade_band,
     )
@@ -551,6 +555,17 @@ if __name__ == "__main__":
         choices=["baseline", "regime_interactions", "shock_reversal"],
         default="baseline",
     )
+    parser.add_argument(
+        "--signal-model-family",
+        choices=["single_linear", "regime_two_model"],
+        default="single_linear",
+    )
+    parser.add_argument(
+        "--regime-drawdown-threshold",
+        type=float,
+        default=-0.08,
+        help="Drawdown threshold for stress-state routing when --signal-model-family=regime_two_model.",
+    )
     parser.add_argument("--min-spy-weight", type=float, default=0.80)
     parser.add_argument("--max-spy-weight", type=float, default=1.05)
     parser.add_argument("--initial-spy-weight", type=float, default=1.0)
@@ -622,6 +637,8 @@ if __name__ == "__main__":
         max_signal_scale=args.max_signal_scale,
         target_mode=args.target_mode,
         feature_family=args.feature_family,
+        signal_model_family=args.signal_model_family,
+        regime_drawdown_threshold=args.regime_drawdown_threshold,
         min_spy_weight=args.min_spy_weight,
         max_spy_weight=args.max_spy_weight,
         initial_spy_weight=args.initial_spy_weight,

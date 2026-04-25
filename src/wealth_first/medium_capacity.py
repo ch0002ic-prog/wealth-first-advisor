@@ -43,6 +43,10 @@ class MediumCapacityConfig:
     target_mode: str = "sign"
     # Feature-generation family used by the stage-1 signal model.
     feature_family: str = "baseline"
+    # Stage-1 signal model family.
+    signal_model_family: str = "single_linear"
+    # Drawdown split threshold used by the regime-two-model family.
+    regime_drawdown_threshold: float = -0.08
     # Whether to use multiplicative signal or additive
     use_multiplicative_signal: bool = True
     # Quantile for robust tail behavior
@@ -60,6 +64,9 @@ class MediumCapacityParams:
     # Training standardization statistics applied at inference time
     feature_mu: np.ndarray
     feature_std: np.ndarray
+    # Optional regime-specific weights used by signal_model_family="regime_two_model".
+    signal_weights_regime_stress: np.ndarray | None = None
+    signal_weights_regime_normal: np.ndarray | None = None
 
 
 def _build_simple_features(spy_returns: pd.Series) -> pd.DataFrame:
@@ -205,6 +212,14 @@ def _build_train_target(train_returns: np.ndarray, cfg: MediumCapacityConfig) ->
     raise ValueError(f"Unsupported target_mode: {cfg.target_mode}")
 
 
+def _solve_ridge_weights(X: np.ndarray, y: np.ndarray, l2: float) -> np.ndarray:
+    """Solve ridge regression weights for a design matrix with bias column included."""
+    XtX = X.T @ X
+    XtX_reg = XtX + l2 * np.eye(XtX.shape[0])
+    Xty = X.T @ y
+    return np.linalg.solve(XtX_reg, Xty)
+
+
 def _simulate_signal_path(
     signal_clipped: np.ndarray,
     window_returns: np.ndarray,
@@ -311,14 +326,52 @@ def train_medium_capacity_model(
     X_train = np.c_[np.ones(len(train_features_std)), train_features_std]
     X_val = np.c_[np.ones(len(val_features_std)), val_features_std]
 
-    # Solve ridge: (X^T X + lambda I) w = X^T y
-    XtX = X_train.T @ X_train
-    XtX_reg = XtX + cfg.ridge_l2 * np.eye(XtX.shape[0])
-    Xty = X_train.T @ train_target
-    signal_weights = np.linalg.solve(XtX_reg, Xty)
+    signal_weights_global = _solve_ridge_weights(X_train, train_target, cfg.ridge_l2)
+    signal_weights_stress: np.ndarray | None = None
+    signal_weights_normal: np.ndarray | None = None
 
-    # Compute predictions on validation
-    val_signal = X_val @ signal_weights
+    # Compute predictions on validation according to the configured signal model family.
+    if cfg.signal_model_family == "single_linear":
+        val_signal = X_val @ signal_weights_global
+    elif cfg.signal_model_family == "regime_two_model":
+        if "dd_63" in features.columns:
+            dd_idx = int(features.columns.get_loc("dd_63"))
+            train_dd = train_features[:, dd_idx]
+            val_dd = val_features[:, dd_idx]
+            train_stress_mask = train_dd <= cfg.regime_drawdown_threshold
+            train_normal_mask = ~train_stress_mask
+            min_points = 25
+
+            if int(np.sum(train_stress_mask)) >= min_points:
+                signal_weights_stress = _solve_ridge_weights(
+                    X_train[train_stress_mask],
+                    train_target[train_stress_mask],
+                    cfg.ridge_l2,
+                )
+            else:
+                signal_weights_stress = signal_weights_global
+
+            if int(np.sum(train_normal_mask)) >= min_points:
+                signal_weights_normal = _solve_ridge_weights(
+                    X_train[train_normal_mask],
+                    train_target[train_normal_mask],
+                    cfg.ridge_l2,
+                )
+            else:
+                signal_weights_normal = signal_weights_global
+
+            val_stress_mask = val_dd <= cfg.regime_drawdown_threshold
+            val_signal = np.empty(len(X_val), dtype=float)
+            val_signal[val_stress_mask] = X_val[val_stress_mask] @ signal_weights_stress
+            val_signal[~val_stress_mask] = X_val[~val_stress_mask] @ signal_weights_normal
+        else:
+            # Fall back to global model when drawdown state is unavailable.
+            signal_weights_stress = signal_weights_global
+            signal_weights_normal = signal_weights_global
+            val_signal = X_val @ signal_weights_global
+    else:
+        raise ValueError(f"Unsupported signal_model_family: {cfg.signal_model_family}")
+
     val_signal_clipped = np.clip(val_signal, -1.0, 1.0)
 
     # Stage 2: map signal to weight, learning the scale
@@ -348,7 +401,9 @@ def train_medium_capacity_model(
         raise RuntimeError("Validation scale search did not produce a result.")
 
     params = MediumCapacityParams(
-        signal_weights=signal_weights,
+        signal_weights=signal_weights_global,
+        signal_weights_regime_stress=signal_weights_stress,
+        signal_weights_regime_normal=signal_weights_normal,
         signal_scale=float(best_scale),
         feature_mu=feature_mu,
         feature_std=feature_std,
@@ -357,11 +412,12 @@ def train_medium_capacity_model(
     diagnostics = {
         "n_train_samples": len(train_returns),
         "n_val_samples": len(val_returns),
-        "signal_bias": float(signal_weights[0]),
+        "signal_bias": float(signal_weights_global[0]),
         "signal_scale": float(best_scale),
         "val_cumulative_return": float(best_validation_result["relative_return"]),
         "val_objective": float(best_val_return),
-        "signal_weights_l2": float(np.linalg.norm(signal_weights[1:])),
+        "signal_weights_l2": float(np.linalg.norm(signal_weights_global[1:])),
+        "signal_model_family": cfg.signal_model_family,
         "validation_signal_abs_p95": float(best_validation_result["signal_abs_p95"]),
         "validation_signal_abs_max": float(best_validation_result["signal_abs_max"]),
         "validation_proposed_step_p95": float(best_validation_result["proposed_step_p95"]),
@@ -399,7 +455,20 @@ def simulate_medium_capacity_policy(
 
     # Compute signal
     X = np.c_[np.ones(len(window_features_std)), window_features_std]
-    signal = X @ params.signal_weights
+    if cfg.signal_model_family == "regime_two_model":
+        stress_w = params.signal_weights_regime_stress
+        normal_w = params.signal_weights_regime_normal
+        if stress_w is not None and normal_w is not None and "dd_63" in features.columns:
+            dd_idx = int(features.columns.get_loc("dd_63"))
+            window_dd = window_features[:, dd_idx]
+            stress_mask = window_dd <= cfg.regime_drawdown_threshold
+            signal = np.empty(len(X), dtype=float)
+            signal[stress_mask] = X[stress_mask] @ stress_w
+            signal[~stress_mask] = X[~stress_mask] @ normal_w
+        else:
+            signal = X @ params.signal_weights
+    else:
+        signal = X @ params.signal_weights
     signal_clipped = np.clip(signal, -1.0, 1.0)
 
     simulation_result = _simulate_signal_path(
