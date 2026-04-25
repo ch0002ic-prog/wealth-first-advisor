@@ -19,7 +19,7 @@ from wealth_first.data import load_returns_csv
 from wealth_first.data_splits import generate_walk_forward_splits
 from wealth_first.medium_capacity import (
     MediumCapacityConfig,
-    _build_simple_features,
+    build_medium_capacity_features,
     simulate_medium_capacity_policy,
     train_medium_capacity_model,
 )
@@ -223,7 +223,10 @@ def _train_policy(
     """
     results = []
     fold_relative_daily_returns: list[list[float]] = []
-    features_df = _build_simple_features(spy_returns)
+    features_df = build_medium_capacity_features(
+        spy_returns,
+        feature_family=cfg.medium_capacity_cfg.feature_family,
+    )
     splits = generate_walk_forward_splits(
         spy_returns.to_frame(name="SPY"),
         benchmark_returns=spy_returns,
@@ -327,6 +330,7 @@ def main(
     min_signal_scale: float = -0.75,
     max_signal_scale: float = 0.75,
     target_mode: str = "sign",
+    feature_family: str = "baseline",
     min_spy_weight: float = 0.80,
     max_spy_weight: float = 1.05,
     initial_spy_weight: float = 1.0,
@@ -365,6 +369,7 @@ def main(
         min_signal_scale=min_signal_scale,
         max_signal_scale=max_signal_scale,
         target_mode=target_mode,
+        feature_family=feature_family,
         action_smoothing=action_smoothing,
         no_trade_band=no_trade_band,
     )
@@ -541,6 +546,11 @@ if __name__ == "__main__":
     parser.add_argument("--min-signal-scale", type=float, default=-0.75)
     parser.add_argument("--max-signal-scale", type=float, default=0.75)
     parser.add_argument("--target-mode", choices=["sign", "tanh_return"], default="sign")
+    parser.add_argument(
+        "--feature-family",
+        choices=["baseline", "regime_interactions", "shock_reversal"],
+        default="baseline",
+    )
     parser.add_argument("--min-spy-weight", type=float, default=0.80)
     parser.add_argument("--max-spy-weight", type=float, default=1.05)
     parser.add_argument("--initial-spy-weight", type=float, default=1.0)
@@ -611,6 +621,7 @@ if __name__ == "__main__":
         min_signal_scale=args.min_signal_scale,
         max_signal_scale=args.max_signal_scale,
         target_mode=args.target_mode,
+        feature_family=args.feature_family,
         min_spy_weight=args.min_spy_weight,
         max_spy_weight=args.max_spy_weight,
         initial_spy_weight=args.initial_spy_weight,

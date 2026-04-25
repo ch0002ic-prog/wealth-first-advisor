@@ -1,0 +1,39 @@
+{
+  "phase": "Phase35",
+  "title": "Bootstrap Stability Meta-Investigation",
+  "status": "complete",
+  "canonical_variant": "v28d_sig02",
+  "question": "Does the reps=200 deep-validation breach signal reflect a real robustness problem or Monte Carlo instability in path bootstrap estimation?",
+  "result": "reps_floor_confirmed",
+  "reps_ladder": [200, 300, 500],
+  "observed": {
+    "reps_200": {
+      "rows": 137,
+      "breach_count": 8,
+      "min_case_slack": -0.0006378505642880622,
+      "mean_case_slack": 0.0023289878564022497,
+      "mean_test_relative": 0.0060539303870665705
+    },
+    "reps_300": {
+      "rows": 137,
+      "breach_count": 0,
+      "min_case_slack": 0.0000332634472723246,
+      "mean_case_slack": 0.0023424279669004592,
+      "mean_test_relative": 0.0060539303870665705
+    },
+    "reps_500": {
+      "rows": 137,
+      "breach_count": 0,
+      "min_case_slack": 0.00004951781801138585,
+      "mean_case_slack": 0.0022552429124198616,
+      "mean_test_relative": 0.0060539303870665705
+    }
+  },
+  "interpretation": [
+    "The reps=200 breaches are not evidence of a better nearby model; they are a low-resolution estimate on a thin-slack reference.",
+    "The canonical reference becomes breach-free by reps=300 and exactly reproduces the Phase28d promotion metrics by reps=500.",
+    "Current governance should treat reps<300 as exploratory only and require reps>=300, preferably reps=500, for winner-selection or promotion decisions in this neighborhood."
+  ],
+  "decision": "hold_current_best",
+  "next_step": "If further research continues, pivot to a genuinely new mechanism search rather than more local threshold nudges around v28d_sig02."
+}

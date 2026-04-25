@@ -1,0 +1,80 @@
+{
+  "phase": "Phase36",
+  "title": "Feature-Family Mechanism Search",
+  "label": "feature_family_a",
+  "reps": 300,
+  "fixed_path_threshold": -0.007,
+  "search_hypothesis": "Richer feature families may improve robustness and return without another local threshold microtune.",
+  "winner": {
+    "variant": "v36_baseline_ref",
+    "feature_family": "baseline",
+    "rows": 16,
+    "breach_count": 0,
+    "breach_rate": 0.0,
+    "min_case_slack": 0.00018342860153710595,
+    "mean_case_slack": 0.002105856036058007,
+    "mean_test_relative": 0.005987772427150384,
+    "mean_validation_relative": 0.008524886581358615,
+    "mean_turnover": 0.0006529236888526112
+  },
+  "baseline_reference": {
+    "variant": "v36_baseline_ref",
+    "feature_family": "baseline",
+    "rows": 16,
+    "breach_count": 0,
+    "breach_rate": 0.0,
+    "min_case_slack": 0.00018342860153710595,
+    "mean_case_slack": 0.002105856036058007,
+    "mean_test_relative": 0.005987772427150384,
+    "mean_validation_relative": 0.008524886581358615,
+    "mean_turnover": 0.0006529236888526112
+  },
+  "winner_vs_baseline": {
+    "delta_mean_test_relative": 0.0,
+    "delta_min_case_slack": 0.0,
+    "delta_mean_turnover": 0.0
+  },
+  "all_variants": [
+    {
+      "variant": "v36_baseline_ref",
+      "feature_family": "baseline",
+      "rows": 16,
+      "breach_count": 0,
+      "breach_rate": 0.0,
+      "min_case_slack": 0.00018342860153710595,
+      "mean_case_slack": 0.002105856036058007,
+      "mean_test_relative": 0.005987772427150384,
+      "mean_validation_relative": 0.008524886581358615,
+      "mean_turnover": 0.0006529236888526112
+    },
+    {
+      "variant": "v36_regime_interactions",
+      "feature_family": "regime_interactions",
+      "rows": 16,
+      "breach_count": 16,
+      "breach_rate": 1.0,
+      "min_case_slack": -0.013642311513832439,
+      "mean_case_slack": -0.010060268834065645,
+      "mean_test_relative": 0.0016941434538852882,
+      "mean_validation_relative": 0.006092306310411177,
+      "mean_turnover": 0.00124362652362501
+    },
+    {
+      "variant": "v36_shock_reversal",
+      "feature_family": "shock_reversal",
+      "rows": 16,
+      "breach_count": 16,
+      "breach_rate": 1.0,
+      "min_case_slack": -0.021758511829664214,
+      "mean_case_slack": -0.01768053235280352,
+      "mean_test_relative": -0.0012867673753798824,
+      "mean_validation_relative": 0.0015436468936802505,
+      "mean_turnover": 0.0006197069342326897
+    }
+  ],
+  "artifacts": {
+    "detail": "/Users/ch0002techvc/Downloads/wealth-first-investing/artifacts/main4_phase36_feature_family_a_detail.csv",
+    "rank": "/Users/ch0002techvc/Downloads/wealth-first-investing/artifacts/main4_phase36_feature_family_a_rank.csv",
+    "summary": "/Users/ch0002techvc/Downloads/wealth-first-investing/artifacts/main4_phase36_feature_family_a_summary.json"
+  }
+}

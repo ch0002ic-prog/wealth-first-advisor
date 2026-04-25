@@ -1,0 +1,46 @@
+{
+  "phase": "Phase35",
+  "title": "Bootstrap Stability Audit",
+  "label": "stability_a",
+  "variant": "v28d_sig02",
+  "reps_grid": [
+    200,
+    300,
+    500
+  ],
+  "decision": "stable_enough_for_high_rep_governance",
+  "observed": [
+    {
+      "reps": 200,
+      "rows": 137,
+      "breach_count": 8,
+      "breach_rate": 0.058394160583941604,
+      "min_case_slack": -0.0006378505642880622,
+      "mean_case_slack": 0.0023289878564022497,
+      "mean_test_relative": 0.0060539303870665705
+    },
+    {
+      "reps": 300,
+      "rows": 137,
+      "breach_count": 0,
+      "breach_rate": 0.0,
+      "min_case_slack": 3.32634472723246e-05,
+      "mean_case_slack": 0.0023424279669004592,
+      "mean_test_relative": 0.0060539303870665705
+    },
+    {
+      "reps": 500,
+      "rows": 137,
+      "breach_count": 0,
+      "breach_rate": 0.0,
+      "min_case_slack": 4.951781801138585e-05,
+      "mean_case_slack": 0.0022552429124198616,
+      "mean_test_relative": 0.0060539303870665705
+    }
+  ],
+  "artifacts": {
+    "detail": "/Users/ch0002techvc/Downloads/wealth-first-investing/artifacts/main4_phase35_stability_a_detail.csv",
+    "rank": "/Users/ch0002techvc/Downloads/wealth-first-investing/artifacts/main4_phase35_stability_a_rank.csv",
+    "summary": "/Users/ch0002techvc/Downloads/wealth-first-investing/artifacts/main4_phase35_stability_a_summary.json"
+  }
+}

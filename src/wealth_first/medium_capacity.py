@@ -9,6 +9,8 @@ Design:
   - Fast training on validation windows with optional regularization
 
 This allows the model to learn market timing decisions without exponential parameter search.
+The feature-generation family is configurable so mechanism searches can move beyond
+small threshold nudges on a single fixed representation.
 """
 from __future__ import annotations
 
@@ -39,6 +41,8 @@ class MediumCapacityConfig:
     max_signal_scale: float = 0.75
     # Stage-1 target construction.
     target_mode: str = "sign"
+    # Feature-generation family used by the stage-1 signal model.
+    feature_family: str = "baseline"
     # Whether to use multiplicative signal or additive
     use_multiplicative_signal: bool = True
     # Quantile for robust tail behavior
@@ -83,6 +87,102 @@ def _build_simple_features(spy_returns: pd.Series) -> pd.DataFrame:
         index=spy_returns.index,
     )
     return out.replace([np.inf, -np.inf], 0.0).fillna(0.0)
+
+
+def _build_regime_interaction_features(spy_returns: pd.Series) -> pd.DataFrame:
+    """Augment the baseline representation with trend, drawdown, and interaction state."""
+    base = _build_simple_features(spy_returns)
+    price = (1.0 + spy_returns).cumprod()
+    lagged_price = price.shift(1)
+
+    def rolling_ret(window: int) -> pd.Series:
+        return ((1.0 + spy_returns).rolling(window, min_periods=1).apply(np.prod, raw=True) - 1.0).shift(1)
+
+    def rolling_vol(window: int) -> pd.Series:
+        return spy_returns.rolling(window, min_periods=2).std(ddof=0).shift(1)
+
+    def rolling_dd(window: int) -> pd.Series:
+        rolling_peak = lagged_price.rolling(window, min_periods=1).max()
+        return lagged_price / rolling_peak - 1.0
+
+    ma_21 = lagged_price.rolling(21, min_periods=1).mean()
+    ma_63 = lagged_price.rolling(63, min_periods=1).mean()
+    vol_21 = rolling_vol(21)
+    vol_63 = rolling_vol(63)
+    ret_5 = rolling_ret(5)
+    ret_126 = rolling_ret(126)
+    dd_21 = rolling_dd(21)
+    dd_126 = rolling_dd(126)
+
+    out = base.assign(
+        ret_5=ret_5,
+        ret_126=ret_126,
+        dd_21=dd_21,
+        dd_126=dd_126,
+        vol_63=vol_63,
+        trend_gap_21_63=(lagged_price / np.maximum(ma_21, 1e-8)) - (lagged_price / np.maximum(ma_63, 1e-8)),
+        vol_ratio_21_63=vol_21 / np.maximum(vol_63, 1e-8) - 1.0,
+    )
+    out["ret_21_x_dd_63"] = out["ret_21"] * np.abs(out["dd_63"])
+    out["ret_63_x_dd_21"] = out["ret_63"] * np.abs(out["dd_21"])
+    out["ret_5_x_vol_21"] = out["ret_5"] * out["vol_21"]
+    out["trend_gap_x_dd_126"] = out["trend_gap_21_63"] * np.abs(out["dd_126"])
+    return out.replace([np.inf, -np.inf], 0.0).fillna(0.0)
+
+
+def _build_shock_reversal_features(spy_returns: pd.Series) -> pd.DataFrame:
+    """Build a distinct representation for crash-and-rebound style timing behavior."""
+    base = _build_simple_features(spy_returns)
+
+    def rolling_ret(window: int) -> pd.Series:
+        return ((1.0 + spy_returns).rolling(window, min_periods=1).apply(np.prod, raw=True) - 1.0).shift(1)
+
+    def rolling_vol(window: int) -> pd.Series:
+        return spy_returns.rolling(window, min_periods=2).std(ddof=0).shift(1)
+
+    ret_5 = rolling_ret(5)
+    ret_10 = rolling_ret(10)
+    ret_42 = rolling_ret(42)
+    vol_5 = rolling_vol(5)
+    vol_21 = rolling_vol(21)
+
+    downside_shock_5 = np.minimum(ret_5, 0.0)
+    downside_shock_10 = np.minimum(ret_10, 0.0)
+    rebound_gap_5_21 = ret_5 - base["ret_21"]
+    rebound_gap_10_42 = ret_10 - ret_42
+    vol_spike_5_21 = vol_5 / np.maximum(vol_21, 1e-8) - 1.0
+
+    out = pd.DataFrame(
+        {
+            "downside_shock_5": downside_shock_5,
+            "downside_shock_10": downside_shock_10,
+            "rebound_gap_5_21": rebound_gap_5_21,
+            "rebound_gap_10_42": rebound_gap_10_42,
+            "vol_spike_5_21": vol_spike_5_21,
+            "dd_21": base["dd_63"] - base["ret_21"],
+            "dd_63": base["dd_63"],
+            "ret_21": base["ret_21"],
+            "vol_21": base["vol_21"],
+        },
+        index=spy_returns.index,
+    )
+    out["shock_x_drawdown"] = out["downside_shock_5"] * np.abs(out["dd_63"])
+    out["rebound_x_vol_spike"] = out["rebound_gap_5_21"] * out["vol_spike_5_21"]
+    return out.replace([np.inf, -np.inf], 0.0).fillna(0.0)
+
+
+def build_medium_capacity_features(
+    spy_returns: pd.Series,
+    feature_family: str = "baseline",
+) -> pd.DataFrame:
+    """Build the requested feature family for the stage-1 signal model."""
+    if feature_family == "baseline":
+        return _build_simple_features(spy_returns)
+    if feature_family == "regime_interactions":
+        return _build_regime_interaction_features(spy_returns)
+    if feature_family == "shock_reversal":
+        return _build_shock_reversal_features(spy_returns)
+    raise ValueError(f"Unsupported feature_family: {feature_family}")
 
 
 def _standardize(x: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
