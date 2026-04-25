@@ -22,11 +22,7 @@ from wealth_first.tradingview_bridge import (
     normalize_event_log_to_returns,
     normalize_tradingview_payload,
 )
-
-# Import build_promotion_gate for testing
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+from wealth_first.promotion_gate import build_promotion_gate
 
 
 def _wait_for(predicate, timeout: float = 2.0, interval: float = 0.05) -> bool:
@@ -1268,31 +1264,8 @@ class TradingViewBridgeTests(unittest.TestCase):
 class PromotionGateTests(unittest.TestCase):
     """Unit tests for phase25z promotion gate materiality thresholds."""
 
-    @classmethod
-    def setUpClass(cls) -> None:
-        """Import build_promotion_gate from phase25z script."""
-        try:
-            from run_phase25z_margin_lift_search import build_promotion_gate
-            cls.build_promotion_gate = build_promotion_gate
-        except ImportError as e:
-            raise ImportError(
-                "Could not import build_promotion_gate from run_phase25z_margin_lift_search. "
-                "Ensure scripts/run_phase25z_margin_lift_search.py is available."
-            ) from e
-    def _get_build_promotion_gate(self):
-        """Dynamically import build_promotion_gate from phase25z script."""
-        try:
-            from run_phase25z_margin_lift_search import build_promotion_gate
-            return build_promotion_gate
-        except ImportError as e:
-            raise ImportError(
-                "Could not import build_promotion_gate from run_phase25z_margin_lift_search. "
-                "Ensure scripts/run_phase25z_margin_lift_search.py is available."
-            ) from e
-
     def test_promotion_gate_rejects_new_variant_when_baseline_missing(self) -> None:
         """Test that promotion fails if v25z_ref not in finalists."""
-        build_promotion_gate = self._get_build_promotion_gate()
         gate = build_promotion_gate(
             finalists=["v25z_ridge_hi", "v25z_band_lo"],  # baseline v25z_ref missing
             best_row={"variant": "v25z_ridge_hi", "breach_count": 0, "all_non_path": True},
@@ -1309,7 +1282,6 @@ class PromotionGateTests(unittest.TestCase):
 
     def test_promotion_gate_rejects_when_materiality_delta_below_eps(self) -> None:
         """Test that promotion fails when delta is below materiality eps."""
-        build_promotion_gate = self._get_build_promotion_gate()
         # Use eps-1e-6 (below the 1e-5 threshold)
         eps_minus = 1e-5 - 1e-6  # Should fail materiality check
         gate = build_promotion_gate(
@@ -1330,7 +1302,6 @@ class PromotionGateTests(unittest.TestCase):
 
     def test_promotion_gate_accepts_when_materiality_delta_above_eps(self) -> None:
         """Test that promotion passes when delta is above materiality eps."""
-        build_promotion_gate = self._get_build_promotion_gate()
         # Use eps+1e-6 (above the 1e-5 threshold)
         eps_plus = 1e-5 + 1e-6  # Should pass materiality check
         gate = build_promotion_gate(
@@ -1351,7 +1322,6 @@ class PromotionGateTests(unittest.TestCase):
 
     def test_promotion_gate_boundary_at_exact_eps(self) -> None:
         """Test behavior when delta equals materiality eps exactly."""
-        build_promotion_gate = self._get_build_promotion_gate()
         gate = build_promotion_gate(
             finalists=["v25z_ref", "v25z_ridge_hi", "v25z_band_lo"],
             best_row={"variant": "v25z_ridge_hi", "breach_count": 0, "all_non_path": True},
@@ -1369,7 +1339,6 @@ class PromotionGateTests(unittest.TestCase):
 
     def test_promotion_gate_rejects_when_best_not_feasible(self) -> None:
         """Test that promotion fails if best variant is not feasible."""
-        build_promotion_gate = self._get_build_promotion_gate()
         gate = build_promotion_gate(
             finalists=["v25z_ref", "v25z_ridge_hi"],
             best_row={
@@ -1389,7 +1358,6 @@ class PromotionGateTests(unittest.TestCase):
 
     def test_promotion_gate_retains_ref_when_best_is_baseline(self) -> None:
         """Test that promotion keeps reference if best variant is v25z_ref itself."""
-        build_promotion_gate = self._get_build_promotion_gate()
         gate = build_promotion_gate(
             finalists=["v25z_ref", "v25z_ridge_hi"],
             best_row={"variant": "v25z_ref", "breach_count": 0, "all_non_path": True},
@@ -1405,7 +1373,6 @@ class PromotionGateTests(unittest.TestCase):
 
     def test_promotion_gate_preserves_improvement_metrics(self) -> None:
         """Test that gate preserves all improvement metric details."""
-        build_promotion_gate = self._get_build_promotion_gate()
         improvement = {
             "delta_min_case_slack": 1.87e-9,
             "delta_mean_case_slack": 2.56e-9,
@@ -1421,7 +1388,6 @@ class PromotionGateTests(unittest.TestCase):
 
     def test_promotion_gate_structure_completeness(self) -> None:
         """Test that gate output includes all required fields."""
-        build_promotion_gate = self._get_build_promotion_gate()
         gate = build_promotion_gate(
             finalists=["v25z_ref", "v25z_ridge_hi"],
             best_row={"variant": "v25z_ridge_hi", "breach_count": 0, "all_non_path": True},
