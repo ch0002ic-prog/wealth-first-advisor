@@ -287,6 +287,7 @@ def _train_policy(
                     "test_max_relative_drawdown": test_diag["max_relative_drawdown"],
                     "active": active,
                     "signal_scale": diag["signal_scale"],
+                    "signal_scale_state_slope": diag.get("signal_scale_state_slope", 0.0),
                     "signal_bias": diag["signal_bias"],
                     "validation_signal_abs_p95": diag["validation_signal_abs_p95"],
                     "validation_proposed_step_p95": diag["validation_proposed_step_p95"],
@@ -333,6 +334,11 @@ def main(
     feature_family: str = "baseline",
     signal_model_family: str = "single_linear",
     regime_drawdown_threshold: float = -0.08,
+    regime_drawdown_floor: float = -0.20,
+    state_scale_slope_min: float = -1.0,
+    state_scale_slope_max: float = 0.5,
+    state_deadband_relaxation: float = 0.0,
+    state_deadband_min_ratio: float = 0.5,
     min_spy_weight: float = 0.80,
     max_spy_weight: float = 1.05,
     initial_spy_weight: float = 1.0,
@@ -374,6 +380,11 @@ def main(
         feature_family=feature_family,
         signal_model_family=signal_model_family,
         regime_drawdown_threshold=regime_drawdown_threshold,
+        regime_drawdown_floor=regime_drawdown_floor,
+        state_scale_slope_min=state_scale_slope_min,
+        state_scale_slope_max=state_scale_slope_max,
+        state_deadband_relaxation=state_deadband_relaxation,
+        state_deadband_min_ratio=state_deadband_min_ratio,
         action_smoothing=action_smoothing,
         no_trade_band=no_trade_band,
     )
@@ -557,7 +568,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--signal-model-family",
-        choices=["single_linear", "regime_two_model"],
+        choices=["single_linear", "regime_two_model", "state_scaled_linear"],
         default="single_linear",
     )
     parser.add_argument(
@@ -565,6 +576,36 @@ if __name__ == "__main__":
         type=float,
         default=-0.08,
         help="Drawdown threshold for stress-state routing when --signal-model-family=regime_two_model.",
+    )
+    parser.add_argument(
+        "--regime-drawdown-floor",
+        type=float,
+        default=-0.20,
+        help="Drawdown floor used to normalize stress intensity for state-scaled signal families.",
+    )
+    parser.add_argument(
+        "--state-scale-slope-min",
+        type=float,
+        default=-1.0,
+        help="Minimum slope for stress-intensity scale modulation in state-scaled signal families.",
+    )
+    parser.add_argument(
+        "--state-scale-slope-max",
+        type=float,
+        default=0.5,
+        help="Maximum slope for stress-intensity scale modulation in state-scaled signal families.",
+    )
+    parser.add_argument(
+        "--state-deadband-relaxation",
+        type=float,
+        default=0.0,
+        help="Stress-dependent deadband relaxation strength for state-scaled signal families.",
+    )
+    parser.add_argument(
+        "--state-deadband-min-ratio",
+        type=float,
+        default=0.5,
+        help="Minimum deadband ratio versus --no-trade-band during stress relaxation.",
     )
     parser.add_argument("--min-spy-weight", type=float, default=0.80)
     parser.add_argument("--max-spy-weight", type=float, default=1.05)
@@ -639,6 +680,11 @@ if __name__ == "__main__":
         feature_family=args.feature_family,
         signal_model_family=args.signal_model_family,
         regime_drawdown_threshold=args.regime_drawdown_threshold,
+        regime_drawdown_floor=args.regime_drawdown_floor,
+        state_scale_slope_min=args.state_scale_slope_min,
+        state_scale_slope_max=args.state_scale_slope_max,
+        state_deadband_relaxation=args.state_deadband_relaxation,
+        state_deadband_min_ratio=args.state_deadband_min_ratio,
         min_spy_weight=args.min_spy_weight,
         max_spy_weight=args.max_spy_weight,
         initial_spy_weight=args.initial_spy_weight,

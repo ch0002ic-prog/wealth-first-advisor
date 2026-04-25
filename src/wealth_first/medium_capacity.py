@@ -47,6 +47,14 @@ class MediumCapacityConfig:
     signal_model_family: str = "single_linear"
     # Drawdown split threshold used by the regime-two-model family.
     regime_drawdown_threshold: float = -0.08
+    # Drawdown floor used to normalize stress intensity for state-scaled families.
+    regime_drawdown_floor: float = -0.20
+    # Search bounds for state-dependent scale slope.
+    state_scale_slope_min: float = -1.0
+    state_scale_slope_max: float = 0.5
+    # Optional deadband relaxation in stress for state-scaled families.
+    state_deadband_relaxation: float = 0.0
+    state_deadband_min_ratio: float = 0.5
     # Whether to use multiplicative signal or additive
     use_multiplicative_signal: bool = True
     # Quantile for robust tail behavior
@@ -67,6 +75,8 @@ class MediumCapacityParams:
     # Optional regime-specific weights used by signal_model_family="regime_two_model".
     signal_weights_regime_stress: np.ndarray | None = None
     signal_weights_regime_normal: np.ndarray | None = None
+    # Optional slope for state-scaled signal families.
+    signal_scale_state_slope: float = 0.0
 
 
 def _build_simple_features(spy_returns: pd.Series) -> pd.DataFrame:
@@ -225,9 +235,14 @@ def _simulate_signal_path(
     window_returns: np.ndarray,
     cfg: MediumCapacityConfig,
     signal_scale: float,
+    signal_scale_path: np.ndarray | None = None,
+    no_trade_band_path: np.ndarray | None = None,
 ) -> dict[str, Any]:
     """Project signal to weights and return performance plus gate diagnostics."""
-    target_weights = cfg.initial_spy_weight + signal_scale * signal_clipped
+    if signal_scale_path is None:
+        target_weights = cfg.initial_spy_weight + signal_scale * signal_clipped
+    else:
+        target_weights = cfg.initial_spy_weight + signal_scale_path * signal_clipped
     target_weights = np.clip(target_weights, cfg.min_spy_weight, cfg.max_spy_weight)
 
     weights = np.empty_like(target_weights)
@@ -238,9 +253,10 @@ def _simulate_signal_path(
         raw_target_delta = target_weights[t] - weights[t - 1]
         candidate_weight = weights[t - 1] + cfg.action_smoothing * raw_target_delta
         proposed_steps[t] = abs(candidate_weight - weights[t - 1])
+        deadband = cfg.no_trade_band if no_trade_band_path is None else float(no_trade_band_path[t])
         # Evaluate the deadband in target-weight space so smoothing does not
         # implicitly widen the threshold by 1 / action_smoothing.
-        if abs(raw_target_delta) < cfg.no_trade_band:
+        if abs(raw_target_delta) < deadband:
             gate_suppressed[t] = True
             candidate_weight = weights[t - 1]
         weights[t] = float(np.clip(candidate_weight, cfg.min_spy_weight, cfg.max_spy_weight))
@@ -331,7 +347,7 @@ def train_medium_capacity_model(
     signal_weights_normal: np.ndarray | None = None
 
     # Compute predictions on validation according to the configured signal model family.
-    if cfg.signal_model_family == "single_linear":
+    if cfg.signal_model_family in {"single_linear", "state_scaled_linear"}:
         val_signal = X_val @ signal_weights_global
     elif cfg.signal_model_family == "regime_two_model":
         if "dd_63" in features.columns:
@@ -374,28 +390,59 @@ def train_medium_capacity_model(
 
     val_signal_clipped = np.clip(val_signal, -1.0, 1.0)
 
-    # Stage 2: map signal to weight, learning the scale
-    # target_weight = initial + signal_scale * signal_clipped
-    # We want to maximize returns subject to [min_spy_weight, max_spy_weight] bounds
-    # Simple approach: find scale that maximizes validation return with actual weight clipping
+    # Stage 2: map signal to weight, learning scale controls.
     best_scale = 0.0
+    best_scale_slope = 0.0
     best_val_return = float("-inf")
     best_validation_result: dict[str, Any] | None = None
 
-    for scale_candidate in np.linspace(cfg.min_signal_scale, cfg.max_signal_scale, 31):
-        validation_result = _simulate_signal_path(
-            signal_clipped=val_signal_clipped,
-            window_returns=val_returns,
-            cfg=cfg,
-            signal_scale=float(scale_candidate),
-        )
-        relative_return = float(validation_result["relative_return"])
-        objective_value = relative_return - cfg.scale_turnover_penalty * float(validation_result["average_turnover"])
+    if cfg.signal_model_family == "state_scaled_linear":
+        if "dd_63" in features.columns:
+            dd_idx = int(features.columns.get_loc("dd_63"))
+            val_dd = val_features[:, dd_idx]
+        else:
+            val_dd = np.full(len(val_signal_clipped), cfg.regime_drawdown_threshold, dtype=float)
 
-        if objective_value > best_val_return:
-            best_val_return = objective_value
-            best_scale = scale_candidate
-            best_validation_result = validation_result
+        drawdown_span = max(cfg.regime_drawdown_threshold - cfg.regime_drawdown_floor, 1e-6)
+        stress_intensity = np.clip((cfg.regime_drawdown_threshold - val_dd) / drawdown_span, 0.0, 1.0)
+
+        for scale_candidate in np.linspace(cfg.min_signal_scale, cfg.max_signal_scale, 31):
+            for slope_candidate in np.linspace(cfg.state_scale_slope_min, cfg.state_scale_slope_max, 17):
+                scale_path = float(scale_candidate) * (1.0 + float(slope_candidate) * stress_intensity)
+                band_ratio = 1.0 - cfg.state_deadband_relaxation * stress_intensity
+                band_ratio = np.maximum(band_ratio, cfg.state_deadband_min_ratio)
+                no_trade_band_path = cfg.no_trade_band * band_ratio
+                validation_result = _simulate_signal_path(
+                    signal_clipped=val_signal_clipped,
+                    window_returns=val_returns,
+                    cfg=cfg,
+                    signal_scale=float(scale_candidate),
+                    signal_scale_path=scale_path,
+                    no_trade_band_path=no_trade_band_path,
+                )
+                relative_return = float(validation_result["relative_return"])
+                objective_value = relative_return - cfg.scale_turnover_penalty * float(validation_result["average_turnover"])
+
+                if objective_value > best_val_return:
+                    best_val_return = objective_value
+                    best_scale = float(scale_candidate)
+                    best_scale_slope = float(slope_candidate)
+                    best_validation_result = validation_result
+    else:
+        for scale_candidate in np.linspace(cfg.min_signal_scale, cfg.max_signal_scale, 31):
+            validation_result = _simulate_signal_path(
+                signal_clipped=val_signal_clipped,
+                window_returns=val_returns,
+                cfg=cfg,
+                signal_scale=float(scale_candidate),
+            )
+            relative_return = float(validation_result["relative_return"])
+            objective_value = relative_return - cfg.scale_turnover_penalty * float(validation_result["average_turnover"])
+
+            if objective_value > best_val_return:
+                best_val_return = objective_value
+                best_scale = float(scale_candidate)
+                best_validation_result = validation_result
 
     if best_validation_result is None:
         raise RuntimeError("Validation scale search did not produce a result.")
@@ -404,6 +451,7 @@ def train_medium_capacity_model(
         signal_weights=signal_weights_global,
         signal_weights_regime_stress=signal_weights_stress,
         signal_weights_regime_normal=signal_weights_normal,
+        signal_scale_state_slope=float(best_scale_slope),
         signal_scale=float(best_scale),
         feature_mu=feature_mu,
         feature_std=feature_std,
@@ -414,6 +462,7 @@ def train_medium_capacity_model(
         "n_val_samples": len(val_returns),
         "signal_bias": float(signal_weights_global[0]),
         "signal_scale": float(best_scale),
+        "signal_scale_state_slope": float(best_scale_slope),
         "val_cumulative_return": float(best_validation_result["relative_return"]),
         "val_objective": float(best_val_return),
         "signal_weights_l2": float(np.linalg.norm(signal_weights_global[1:])),
@@ -455,6 +504,8 @@ def simulate_medium_capacity_policy(
 
     # Compute signal
     X = np.c_[np.ones(len(window_features_std)), window_features_std]
+    scale_path: np.ndarray | None = None
+    no_trade_band_path: np.ndarray | None = None
     if cfg.signal_model_family == "regime_two_model":
         stress_w = params.signal_weights_regime_stress
         normal_w = params.signal_weights_regime_normal
@@ -469,6 +520,17 @@ def simulate_medium_capacity_policy(
             signal = X @ params.signal_weights
     else:
         signal = X @ params.signal_weights
+
+    if cfg.signal_model_family == "state_scaled_linear":
+        if "dd_63" in features.columns:
+            dd_idx = int(features.columns.get_loc("dd_63"))
+            window_dd = window_features[:, dd_idx]
+            drawdown_span = max(cfg.regime_drawdown_threshold - cfg.regime_drawdown_floor, 1e-6)
+            stress_intensity = np.clip((cfg.regime_drawdown_threshold - window_dd) / drawdown_span, 0.0, 1.0)
+            scale_path = float(params.signal_scale) * (1.0 + float(params.signal_scale_state_slope) * stress_intensity)
+            band_ratio = 1.0 - cfg.state_deadband_relaxation * stress_intensity
+            band_ratio = np.maximum(band_ratio, cfg.state_deadband_min_ratio)
+            no_trade_band_path = cfg.no_trade_band * band_ratio
     signal_clipped = np.clip(signal, -1.0, 1.0)
 
     simulation_result = _simulate_signal_path(
@@ -476,6 +538,8 @@ def simulate_medium_capacity_policy(
         window_returns=window_returns,
         cfg=cfg,
         signal_scale=float(params.signal_scale),
+        signal_scale_path=scale_path,
+        no_trade_band_path=no_trade_band_path,
     )
 
     return (
