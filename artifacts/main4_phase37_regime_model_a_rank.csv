@@ -1,4 +1,0 @@
-variant,feature_family,signal_model_family,regime_drawdown_threshold,rows,breach_count,breach_rate,min_case_slack,mean_case_slack,mean_test_relative,mean_validation_relative,mean_turnover
-v37_single_linear_ref,baseline,single_linear,-0.08,16,0,0.0,0.00018342860153710595,0.002105856036058007,0.005987772427150384,0.008524886581358615,0.0006529236888526112
-v37_regime_two_model_dd10,baseline,regime_two_model,-0.1,16,16,1.0,-0.01947918836235193,-0.014399104756369081,0.0067509797083199485,0.011406717374947674,0.0017678349363793155
-v37_regime_two_model_dd08,baseline,regime_two_model,-0.08,16,16,1.0,-0.06912608954701964,-0.04079944235591119,-0.001728153259730747,0.008990653858494823,0.0010797803038561074

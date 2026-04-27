@@ -1,4 +1,0 @@
-variant,feature_family,signal_model_family,regime_drawdown_threshold,regime_drawdown_floor,state_scale_slope_min,state_scale_slope_max,rows,breach_count,breach_rate,min_case_slack,mean_case_slack,mean_test_relative,mean_validation_relative,mean_turnover
-v38_single_linear_ref,baseline,single_linear,-0.08,-0.2,-1.0,0.5,16,0,0.0,0.00018342860153710595,0.002105856036058007,0.005987772427150384,0.008524886581358615,0.0006529236888526112
-v38_state_scale_balanced,baseline,state_scaled_linear,-0.1,-0.22,-1.2,0.3,16,0,0.0,0.0037260545716875254,0.004108950353415524,0.004978737406566203,0.009775837842230996,0.00042584698137376655
-v38_state_scale_defensive,baseline,state_scaled_linear,-0.08,-0.2,-1.4,0.0,16,0,0.0,0.0017546434623480819,0.003366115903125445,0.004366153662666905,0.00898177940989826,0.00037538903363428715

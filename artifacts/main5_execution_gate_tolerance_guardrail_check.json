@@ -1,0 +1,77 @@
+{
+  "status": "pass",
+  "checks": {
+    "deep_zi_1e10": {
+      "matched_rows": 3456,
+      "changed_rows": 0,
+      "moved_candidates": []
+    },
+    "stress_1e10": {
+      "matched_rows": 448,
+      "changed_rows": 32,
+      "moved_candidates": [
+        "l_s092625468_objw1"
+      ]
+    },
+    "stress_1p2e10": {
+      "matched_rows": 448,
+      "changed_rows": 32,
+      "moved_candidates": [
+        "l_s092625468_objw1"
+      ]
+    },
+    "stress_1p5e10": {
+      "matched_rows": 448,
+      "changed_rows": 64,
+      "moved_candidates": [
+        "l_s092625468_objw1",
+        "l_s092625470_objw1"
+      ]
+    },
+    "stress_1p3e10": {
+      "matched_rows": 448,
+      "changed_rows": 32,
+      "moved_candidates": [
+        "l_s092625468_objw1"
+      ]
+    },
+    "stress_1p4e10": {
+      "matched_rows": 448,
+      "changed_rows": 32,
+      "moved_candidates": [
+        "l_s092625468_objw1"
+      ]
+    },
+    "bisect_tol145e12": {
+      "matched_rows": 64,
+      "changed_rows": 32,
+      "moved_candidates": [
+        "l_s092625468_objw1"
+      ]
+    },
+    "bisect_tol146e12": {
+      "matched_rows": 64,
+      "changed_rows": 32,
+      "moved_candidates": [
+        "l_s092625468_objw1"
+      ]
+    },
+    "bisect_tol147e12": {
+      "matched_rows": 64,
+      "changed_rows": 64,
+      "moved_candidates": [
+        "l_s092625468_objw1",
+        "l_s092625470_objw1"
+      ]
+    },
+    "bisect_tol148e12": {
+      "matched_rows": 64,
+      "changed_rows": 64,
+      "moved_candidates": [
+        "l_s092625468_objw1",
+        "l_s092625470_objw1"
+      ]
+    }
+  },
+  "failures": []
+}

@@ -1,5 +1,0 @@
-variant,feature_family,signal_model_family,regime_drawdown_threshold,regime_drawdown_floor,state_scale_slope_min,state_scale_slope_max,scale_turnover_penalty,rows,breach_count,breach_rate,min_case_slack,mean_case_slack,mean_test_relative,mean_validation_relative,mean_turnover
-v38b_single_linear_ref,baseline,single_linear,-0.08,-0.2,-1.0,0.5,2.9952,16,0,0.0,0.00018342860153710595,0.002105856036058007,0.005987772427150384,0.008524886581358615,0.0006529236888526112
-v38b_state_scale_balanced_pen22,baseline,state_scaled_linear,-0.1,-0.22,-0.45,0.25,2.2,16,1,0.0625,-4.9709464173680606e-05,0.0012475596865002534,0.0038756149359874927,0.009764576160569714,0.0005485433263590692
-v38b_state_scale_lowdrag_pen20,baseline,state_scaled_linear,-0.1,-0.22,-0.3,0.35,2.0,16,8,0.5,-0.0005441467695196213,9.544580396190832e-05,0.0038601537787049996,0.01015677932669401,0.0005180679656054782
-v38b_state_scale_mild_pen24,baseline,state_scaled_linear,-0.08,-0.2,-0.6,0.15,2.4,16,10,0.625,-0.002852557652348803,-0.000565468364505434,0.003190488216641296,0.010080288570645513,0.0005532741623375351

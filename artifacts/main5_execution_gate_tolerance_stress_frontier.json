@@ -1,0 +1,62 @@
+{
+  "rows": [
+    {
+      "tolerance": "1e-10",
+      "matched_rows": 448,
+      "changed_rows": 32,
+      "moved_candidates": 1,
+      "moved_list": "l_s092625468_objw1",
+      "mean_delta_test": 0.0004765050747405893,
+      "mean_delta_steps": -0.03571428571428571
+    },
+    {
+      "tolerance": "1.2e-10",
+      "matched_rows": 448,
+      "changed_rows": 32,
+      "moved_candidates": 1,
+      "moved_list": "l_s092625468_objw1",
+      "mean_delta_test": 0.0004765050747405893,
+      "mean_delta_steps": -0.03571428571428571
+    },
+    {
+      "tolerance": "1.3e-10",
+      "matched_rows": 448,
+      "changed_rows": 32,
+      "moved_candidates": 1,
+      "moved_list": "l_s092625468_objw1",
+      "mean_delta_test": 0.0004765050747405893,
+      "mean_delta_steps": -0.03571428571428571
+    },
+    {
+      "tolerance": "1.4e-10",
+      "matched_rows": 448,
+      "changed_rows": 32,
+      "moved_candidates": 1,
+      "moved_list": "l_s092625468_objw1",
+      "mean_delta_test": 0.0004765050747405893,
+      "mean_delta_steps": -0.03571428571428571
+    },
+    {
+      "tolerance": "1.5e-10",
+      "matched_rows": 448,
+      "changed_rows": 64,
+      "moved_candidates": 2,
+      "moved_list": "l_s092625468_objw1, l_s092625470_objw1",
+      "mean_delta_test": 0.0009530101514757785,
+      "mean_delta_steps": -0.07142857142857142
+    }
+  ],
+  "bisection_scan": [
+    {"tolerance": "base",     "changed_rows": 0,  "moved_candidates": 0, "moved_list": []},
+    {"tolerance": "1.45e-10", "changed_rows": 32, "moved_candidates": 1, "moved_list": ["l_s092625468_objw1"]},
+    {"tolerance": "1.46e-10", "changed_rows": 32, "moved_candidates": 1, "moved_list": ["l_s092625468_objw1"]},
+    {"tolerance": "1.47e-10", "changed_rows": 64, "moved_candidates": 2, "moved_list": ["l_s092625468_objw1", "l_s092625470_objw1"]},
+    {"tolerance": "1.48e-10", "changed_rows": 64, "moved_candidates": 2, "moved_list": ["l_s092625468_objw1", "l_s092625470_objw1"]},
+    {"tolerance": "1.49e-10", "changed_rows": 64, "moved_candidates": 2, "moved_list": ["l_s092625468_objw1", "l_s092625470_objw1"]},
+    {"tolerance": "1.5e-10",  "changed_rows": 64, "moved_candidates": 2, "moved_list": ["l_s092625468_objw1", "l_s092625470_objw1"]}
+  ],
+  "first_flip": {
+    "l_s092625468_objw1": "<=1e-10",
+    "l_s092625470_objw1": "(1.46e-10, 1.47e-10]"
+  }
+}

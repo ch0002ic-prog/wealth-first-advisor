@@ -55,6 +55,53 @@ class MediumCapacityConfig:
     # Optional deadband relaxation in stress for state-scaled families.
     state_deadband_relaxation: float = 0.0
     state_deadband_min_ratio: float = 0.5
+    # Calm-period band widening: applies to all signal families.
+    # When calm_band_widening > 0 the no-trade band is multiplied by
+    # (1 + calm_band_widening * (1 - stress_intensity)), so the band widens in
+    # calm (low-drawdown) periods and returns to the configured baseline in stress.
+    # This reduces unnecessary churn when the market is at a peak / low-stress state.
+    calm_band_widening: float = 0.0
+    # If False, keep validation scale search on the baseline deadband even when
+    # calm-band widening is enabled for inference-time simulation.
+    calm_band_widening_in_validation: bool = True
+    # Execution gate behavior for translating target deltas into trades.
+    # hard: classic no-trade band with full suppression inside the band.
+    # smooth: continuous attenuation around the no-trade band.
+    execution_gate_mode: str = "hard"
+    # Transition width for smooth execution gate as a ratio of the deadband.
+    smooth_gate_width_ratio: float = 0.25
+    # Minimum attenuation factor for smooth gate at deep in-band values.
+    smooth_gate_floor: float = 0.0
+    # Optional numerical tolerance for hard deadband comparisons.
+    # A tiny positive value can suppress floating-point boundary flips where
+    # abs(raw_target_delta) is effectively equal to no_trade_band.
+    execution_gate_tolerance: float = 0.0
+    # Optional validation objective shaping toward a target executed-step rate.
+    validation_step_rate_target: float | None = None
+    validation_step_rate_penalty: float = 0.0
+    # Optional validation objective shaping toward a target gate-suppression rate.
+    validation_suppression_rate_target: float | None = None
+    validation_suppression_rate_penalty: float = 0.0
+    # Optional hard validation activity constraints for scale search.
+    validation_hard_min_step_rate: float | None = None
+    validation_hard_max_suppression_rate: float | None = None
+    # Optional robustness-aware validation shaping.
+    # Penalize shortfall below a validation relative-return floor.
+    validation_relative_floor_target: float | None = None
+    validation_relative_floor_penalty: float = 0.0
+    # Penalize large validation max-relative-drawdown directly.
+    validation_max_relative_drawdown_penalty: float = 0.0
+    # Optional hard floor: candidates below this validation relative return are rejected.
+    validation_hard_min_relative_return: float | None = None
+    # Optional bootstrap-tail shaping of validation objective.
+    validation_tail_bootstrap_reps: int = 0
+    validation_tail_bootstrap_block_size: int = 20
+    validation_tail_bootstrap_quantile: float = 0.05
+    validation_tail_bootstrap_floor_target: float | None = None
+    validation_tail_bootstrap_penalty: float = 0.0
+    validation_tail_bootstrap_hard_min: float | None = None
+    validation_tail_bootstrap_objective_weight: float = 0.0
+    validation_tail_bootstrap_seed: int = 12345
     # Whether to use multiplicative signal or additive
     use_multiplicative_signal: bool = True
     # Quantile for robust tail behavior
@@ -256,9 +303,22 @@ def _simulate_signal_path(
         deadband = cfg.no_trade_band if no_trade_band_path is None else float(no_trade_band_path[t])
         # Evaluate the deadband in target-weight space so smoothing does not
         # implicitly widen the threshold by 1 / action_smoothing.
-        if abs(raw_target_delta) < deadband:
-            gate_suppressed[t] = True
-            candidate_weight = weights[t - 1]
+        if cfg.execution_gate_mode == "hard":
+            threshold = deadband + max(float(cfg.execution_gate_tolerance), 0.0)
+            if abs(raw_target_delta) <= threshold:
+                gate_suppressed[t] = True
+                candidate_weight = weights[t - 1]
+        elif cfg.execution_gate_mode == "smooth":
+            transition = max(abs(deadband) * cfg.smooth_gate_width_ratio, 1e-8)
+            x = (abs(raw_target_delta) - deadband) / transition
+            x = float(np.clip(x, -60.0, 60.0))
+            scale = 1.0 / (1.0 + np.exp(-x))
+            scale = cfg.smooth_gate_floor + (1.0 - cfg.smooth_gate_floor) * scale
+            adjusted_target_delta = raw_target_delta * scale
+            candidate_weight = weights[t - 1] + cfg.action_smoothing * adjusted_target_delta
+            gate_suppressed[t] = bool(scale < 0.5)
+        else:
+            raise ValueError(f"Unsupported execution_gate_mode: {cfg.execution_gate_mode}")
         weights[t] = float(np.clip(candidate_weight, cfg.min_spy_weight, cfg.max_spy_weight))
 
     turnovers = np.abs(np.diff(weights, prepend=weights[0]))
@@ -305,6 +365,53 @@ def _simulate_signal_path(
         "gate_suppressed_step_count": int(np.sum(gate_slice)) if step_count > 0 else 0,
         "gate_suppression_rate": float(np.mean(gate_slice)) if step_count > 0 else 0.0,
     }
+
+
+def _block_bootstrap_total_relative_return(
+    relative_daily_returns: np.ndarray,
+    block_size: int,
+    rng: np.random.Generator,
+) -> float:
+    """Sample a block-bootstrapped path and return compounded relative return."""
+    n = int(len(relative_daily_returns))
+    if n == 0:
+        return 0.0
+    if block_size <= 1:
+        idx = rng.integers(0, n, size=n)
+        sampled = relative_daily_returns[idx]
+    else:
+        starts = rng.integers(0, n, size=max(1, int(np.ceil(n / block_size))))
+        chunks = []
+        for start in starts:
+            end = min(start + block_size, n)
+            chunk = relative_daily_returns[start:end]
+            if len(chunk) < block_size:
+                remainder = block_size - len(chunk)
+                chunk = np.concatenate([chunk, relative_daily_returns[:remainder]])
+            chunks.append(chunk)
+        sampled = np.concatenate(chunks)[:n]
+    return float(np.prod(1.0 + sampled) - 1.0)
+
+
+def _compute_bootstrap_total_return_quantile(
+    relative_daily_returns: list[float],
+    reps: int,
+    block_size: int,
+    quantile: float,
+    seed: int,
+) -> float:
+    """Compute a bootstrap quantile of compounded relative return on one validation window."""
+    if reps <= 0:
+        return float("nan")
+    arr = np.asarray(relative_daily_returns, dtype=float)
+    if len(arr) == 0:
+        return float("nan")
+    q = float(np.clip(quantile, 0.0, 1.0))
+    rng = np.random.default_rng(seed)
+    samples = np.empty(int(reps), dtype=float)
+    for i in range(int(reps)):
+        samples[i] = _block_bootstrap_total_relative_return(arr, block_size=block_size, rng=rng)
+    return float(np.quantile(samples, q))
 
 
 def train_medium_capacity_model(
@@ -421,7 +528,61 @@ def train_medium_capacity_model(
                     no_trade_band_path=no_trade_band_path,
                 )
                 relative_return = float(validation_result["relative_return"])
+                if (
+                    cfg.validation_hard_min_relative_return is not None
+                    and relative_return < cfg.validation_hard_min_relative_return
+                ):
+                    continue
                 objective_value = relative_return - cfg.scale_turnover_penalty * float(validation_result["average_turnover"])
+                val_step_den = max(len(val_returns) - 1, 1)
+                val_step_rate = float(validation_result["executed_step_count"]) / float(val_step_den)
+                val_suppression_rate = float(validation_result["gate_suppression_rate"])
+                if cfg.validation_step_rate_target is not None and cfg.validation_step_rate_penalty > 0.0:
+                    objective_value -= cfg.validation_step_rate_penalty * abs(
+                        val_step_rate - cfg.validation_step_rate_target
+                    )
+                if (
+                    cfg.validation_suppression_rate_target is not None
+                    and cfg.validation_suppression_rate_penalty > 0.0
+                ):
+                    objective_value -= cfg.validation_suppression_rate_penalty * abs(
+                        val_suppression_rate - cfg.validation_suppression_rate_target
+                    )
+                if (
+                    cfg.validation_relative_floor_target is not None
+                    and cfg.validation_relative_floor_penalty > 0.0
+                ):
+                    objective_value -= cfg.validation_relative_floor_penalty * max(
+                        0.0,
+                        cfg.validation_relative_floor_target - relative_return,
+                    )
+                if cfg.validation_max_relative_drawdown_penalty > 0.0:
+                    objective_value -= cfg.validation_max_relative_drawdown_penalty * float(
+                        validation_result["max_relative_drawdown"]
+                    )
+                if cfg.validation_tail_bootstrap_reps > 0:
+                    tail_metric = _compute_bootstrap_total_return_quantile(
+                        relative_daily_returns=list(validation_result["relative_daily_returns"]),
+                        reps=cfg.validation_tail_bootstrap_reps,
+                        block_size=cfg.validation_tail_bootstrap_block_size,
+                        quantile=cfg.validation_tail_bootstrap_quantile,
+                        seed=cfg.validation_tail_bootstrap_seed,
+                    )
+                    if (
+                        cfg.validation_tail_bootstrap_floor_target is not None
+                        and cfg.validation_tail_bootstrap_penalty > 0.0
+                    ):
+                        objective_value -= cfg.validation_tail_bootstrap_penalty * max(
+                            0.0,
+                            cfg.validation_tail_bootstrap_floor_target - tail_metric,
+                        )
+                    if (
+                        cfg.validation_tail_bootstrap_hard_min is not None
+                        and tail_metric < cfg.validation_tail_bootstrap_hard_min
+                    ):
+                        continue
+                    if cfg.validation_tail_bootstrap_objective_weight != 0.0:
+                        objective_value += cfg.validation_tail_bootstrap_objective_weight * tail_metric
 
                 if objective_value > best_val_return:
                     best_val_return = objective_value
@@ -429,15 +590,84 @@ def train_medium_capacity_model(
                     best_scale_slope = float(slope_candidate)
                     best_validation_result = validation_result
     else:
+        # Calm-band widening: compute a state-conditional no_trade_band_path when enabled.
+        _calm_band_path: np.ndarray | None = None
+        if (
+            cfg.calm_band_widening_in_validation
+            and cfg.calm_band_widening > 0.0
+            and "dd_63" in features.columns
+        ):
+            dd_idx_calm = int(features.columns.get_loc("dd_63"))
+            val_dd_calm = val_features[:, dd_idx_calm]
+            drawdown_span_calm = max(cfg.regime_drawdown_threshold - cfg.regime_drawdown_floor, 1e-6)
+            stress_calm = np.clip(
+                (cfg.regime_drawdown_threshold - val_dd_calm) / drawdown_span_calm, 0.0, 1.0
+            )
+            _calm_band_path = cfg.no_trade_band * (1.0 + cfg.calm_band_widening * (1.0 - stress_calm))
         for scale_candidate in np.linspace(cfg.min_signal_scale, cfg.max_signal_scale, 31):
             validation_result = _simulate_signal_path(
                 signal_clipped=val_signal_clipped,
                 window_returns=val_returns,
                 cfg=cfg,
                 signal_scale=float(scale_candidate),
+                no_trade_band_path=_calm_band_path,
             )
             relative_return = float(validation_result["relative_return"])
+            if (
+                cfg.validation_hard_min_relative_return is not None
+                and relative_return < cfg.validation_hard_min_relative_return
+            ):
+                continue
             objective_value = relative_return - cfg.scale_turnover_penalty * float(validation_result["average_turnover"])
+            val_step_den = max(len(val_returns) - 1, 1)
+            val_step_rate = float(validation_result["executed_step_count"]) / float(val_step_den)
+            val_suppression_rate = float(validation_result["gate_suppression_rate"])
+            if cfg.validation_step_rate_target is not None and cfg.validation_step_rate_penalty > 0.0:
+                objective_value -= cfg.validation_step_rate_penalty * abs(
+                    val_step_rate - cfg.validation_step_rate_target
+                )
+            if (
+                cfg.validation_suppression_rate_target is not None
+                and cfg.validation_suppression_rate_penalty > 0.0
+            ):
+                objective_value -= cfg.validation_suppression_rate_penalty * abs(
+                    val_suppression_rate - cfg.validation_suppression_rate_target
+                )
+            if (
+                cfg.validation_relative_floor_target is not None
+                and cfg.validation_relative_floor_penalty > 0.0
+            ):
+                objective_value -= cfg.validation_relative_floor_penalty * max(
+                    0.0,
+                    cfg.validation_relative_floor_target - relative_return,
+                )
+            if cfg.validation_max_relative_drawdown_penalty > 0.0:
+                objective_value -= cfg.validation_max_relative_drawdown_penalty * float(
+                    validation_result["max_relative_drawdown"]
+                )
+            if cfg.validation_tail_bootstrap_reps > 0:
+                tail_metric = _compute_bootstrap_total_return_quantile(
+                    relative_daily_returns=list(validation_result["relative_daily_returns"]),
+                    reps=cfg.validation_tail_bootstrap_reps,
+                    block_size=cfg.validation_tail_bootstrap_block_size,
+                    quantile=cfg.validation_tail_bootstrap_quantile,
+                    seed=cfg.validation_tail_bootstrap_seed,
+                )
+                if (
+                    cfg.validation_tail_bootstrap_floor_target is not None
+                    and cfg.validation_tail_bootstrap_penalty > 0.0
+                ):
+                    objective_value -= cfg.validation_tail_bootstrap_penalty * max(
+                        0.0,
+                        cfg.validation_tail_bootstrap_floor_target - tail_metric,
+                    )
+                if (
+                    cfg.validation_tail_bootstrap_hard_min is not None
+                    and tail_metric < cfg.validation_tail_bootstrap_hard_min
+                ):
+                    continue
+                if cfg.validation_tail_bootstrap_objective_weight != 0.0:
+                    objective_value += cfg.validation_tail_bootstrap_objective_weight * tail_metric
 
             if objective_value > best_val_return:
                 best_val_return = objective_value
@@ -531,6 +761,12 @@ def simulate_medium_capacity_policy(
             band_ratio = 1.0 - cfg.state_deadband_relaxation * stress_intensity
             band_ratio = np.maximum(band_ratio, cfg.state_deadband_min_ratio)
             no_trade_band_path = cfg.no_trade_band * band_ratio
+    elif cfg.calm_band_widening > 0.0 and "dd_63" in features.columns:
+        dd_idx = int(features.columns.get_loc("dd_63"))
+        window_dd = window_features[:, dd_idx]
+        drawdown_span = max(cfg.regime_drawdown_threshold - cfg.regime_drawdown_floor, 1e-6)
+        stress_infer = np.clip((cfg.regime_drawdown_threshold - window_dd) / drawdown_span, 0.0, 1.0)
+        no_trade_band_path = cfg.no_trade_band * (1.0 + cfg.calm_band_widening * (1.0 - stress_infer))
     signal_clipped = np.clip(signal, -1.0, 1.0)
 
     simulation_result = _simulate_signal_path(
