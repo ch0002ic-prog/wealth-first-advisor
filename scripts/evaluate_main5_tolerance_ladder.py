@@ -41,6 +41,19 @@ def summarize_errors(errors: list[float]) -> dict:
     }
 
 
+def validation_family(path: Path) -> str:
+    name = path.name.lower()
+    if "surrogate" in name:
+        return "surrogate"
+    if "piecewise" in name:
+        return "piecewise"
+    if "blind_forward" in name:
+        return "blind_forward"
+    if "reverse_blind" in name:
+        return "reverse_blind"
+    return "other"
+
+
 def load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -78,6 +91,11 @@ def main() -> int:
         type=Path,
         default=Path("artifacts/main5_execution_gate_tolerance_evaluator_2026-04-28.md"),
         help="Output markdown summary path.",
+    )
+    parser.add_argument(
+        "--robust-summary",
+        action="store_true",
+        help="Include per-validation-family error summaries and robust aggregate metrics.",
     )
     args = parser.parse_args()
 
@@ -130,11 +148,14 @@ def main() -> int:
     # Aggregate prediction errors from validation artifacts.
     prediction_errors = []
     prediction_error_rows = []
+    prediction_errors_by_family: dict[str, list[float]] = {}
     missing_validation_files = []
     for vp in args.validation_jsons:
         if not vp.exists():
             missing_validation_files.append(str(vp))
             continue
+        fam = validation_family(vp)
+        prediction_errors_by_family.setdefault(fam, [])
         data = load_json(vp)
         validation = data.get("validation", {})
         for candidate, rec in validation.items():
@@ -147,15 +168,29 @@ def main() -> int:
                 continue
             err_f = float(err)
             prediction_errors.append(err_f)
+            prediction_errors_by_family[fam].append(err_f)
             prediction_error_rows.append(
                 {
                     "candidate": candidate,
                     "relative_error": err_f,
                     "source_file": str(vp),
+                    "family": fam,
                 }
             )
 
     error_summary = summarize_errors(prediction_errors)
+    error_summary_by_family = {
+        fam: summarize_errors(vals) for fam, vals in prediction_errors_by_family.items()
+    }
+
+    robust_errors = []
+    for row in prediction_error_rows:
+        # Exclude surrogate (historical coarse model) and reverse-blind
+        # from robust aggregate to focus on current local predictive quality.
+        if row["family"] in {"surrogate", "reverse_blind"}:
+            continue
+        robust_errors.append(row["relative_error"])
+    robust_error_summary = summarize_errors(robust_errors)
 
     result = {
         "status": "pass",
@@ -165,6 +200,8 @@ def main() -> int:
         "branch_monotonicity": branch_monotonic,
         "interval_summary": interval_summary,
         "prediction_error_summary": error_summary,
+        "prediction_error_summary_by_family": error_summary_by_family,
+        "prediction_error_summary_robust": robust_error_summary,
         "prediction_error_rows": prediction_error_rows,
         "missing_validation_files": missing_validation_files,
     }
@@ -205,6 +242,23 @@ def main() -> int:
     md_lines.append(f"- rmse: {error_summary['rmse']}")
     md_lines.append(f"- max_abs_error: {error_summary['max_abs_error']}")
     md_lines.append("")
+    if args.robust_summary:
+        md_lines.append("## Prediction Error Summary By Family")
+        for fam in sorted(error_summary_by_family):
+            fam_summary = error_summary_by_family[fam]
+            md_lines.append(
+                f"- {fam}: count={fam_summary['count']}, "
+                f"mae={fam_summary['mae']}, rmse={fam_summary['rmse']}, "
+                f"max_abs_error={fam_summary['max_abs_error']}"
+            )
+        md_lines.append("")
+        md_lines.append("## Robust Aggregate Error Summary")
+        md_lines.append("- note: excludes surrogate and reverse_blind families")
+        md_lines.append(f"- count: {robust_error_summary['count']}")
+        md_lines.append(f"- mae: {robust_error_summary['mae']}")
+        md_lines.append(f"- rmse: {robust_error_summary['rmse']}")
+        md_lines.append(f"- max_abs_error: {robust_error_summary['max_abs_error']}")
+        md_lines.append("")
     if missing_validation_files:
         md_lines.append("## Missing Validation Files")
         for p in missing_validation_files:
