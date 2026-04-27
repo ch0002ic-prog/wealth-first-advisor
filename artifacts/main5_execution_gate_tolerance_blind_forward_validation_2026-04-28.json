@@ -1,0 +1,26 @@
+{
+  "predictions": {
+    "l_s092625478_objw1_good_from_pred": 5.490099999999999e-10,
+    "k_s09262555_objw1_good_from_pred": 4.16e-09
+  },
+  "validation": {
+    "l_s092625478_objw1": {
+      "bad_through": 5.48e-10,
+      "good_from": 5.49e-10,
+      "midpoint": 5.484999999999999e-10,
+      "interval_width": 9.999999999999965e-13,
+      "source": "blind-forward-validated",
+      "predicted_good_from": 5.490099999999999e-10,
+      "pred_vs_midpoint_rel_error": 0.0009298085688241248
+    },
+    "k_s09262555_objw1": {
+      "bad_through": 4.16e-09,
+      "good_from": 4.17e-09,
+      "midpoint": 4.1649999999999996e-09,
+      "interval_width": 1.0000000000000586e-11,
+      "source": "blind-forward-validated",
+      "predicted_good_from": 4.16e-09,
+      "pred_vs_midpoint_rel_error": -0.0012004801920768018
+    }
+  }
+}

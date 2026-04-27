@@ -1,0 +1,7 @@
+{
+  "predictions": {
+    "l_s092625478_objw1_good_from_pred": 5.490099999999999e-10,
+    "k_s09262555_objw1_good_from_pred": 4.16e-09
+  },
+  "method": "local_increment_blind_forward"
+}
