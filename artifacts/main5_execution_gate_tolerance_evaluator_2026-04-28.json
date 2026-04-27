@@ -1,0 +1,62 @@
+{
+  "status": "pass",
+  "ladder_file": "artifacts/main5_execution_gate_tolerance_continuity_ladder_extended_2026-04-28-v3.json",
+  "entry_count": 13,
+  "global_monotonic_non_decreasing": true,
+  "branch_monotonicity": {
+    "l": {
+      "monotonic_non_decreasing": true,
+      "count": 7
+    },
+    "k": {
+      "monotonic_non_decreasing": true,
+      "count": 6
+    }
+  },
+  "interval_summary": {
+    "count_with_finite_bad_through": 11,
+    "min_width": 1.0000000000008237e-14,
+    "max_width": 1.999999999999993e-11,
+    "mean_width": 5.055454545454554e-12,
+    "invalid_width_candidates": []
+  },
+  "prediction_error_summary": {
+    "count": 6,
+    "mae": 0.10470353627836704,
+    "rmse": 0.252526358775423,
+    "max_abs_error": 0.6185410554844598
+  },
+  "prediction_error_rows": [
+    {
+      "candidate": "l_s092625474_objw1",
+      "relative_error": 0.0036808051761324867,
+      "source_file": "artifacts/main5_execution_gate_tolerance_surrogate_validation_2026-04-28.json"
+    },
+    {
+      "candidate": "k_s09262552_objw1",
+      "relative_error": 0.6185410554844598,
+      "source_file": "artifacts/main5_execution_gate_tolerance_surrogate_validation_2026-04-28.json"
+    },
+    {
+      "candidate": "l_s092625476_objw1",
+      "relative_error": -0.0026398958914296364,
+      "source_file": "artifacts/main5_execution_gate_tolerance_piecewise_validation_2026-04-28.json"
+    },
+    {
+      "candidate": "k_s09262554_objw1",
+      "relative_error": 0.0012291723572793569,
+      "source_file": "artifacts/main5_execution_gate_tolerance_piecewise_validation_2026-04-28.json"
+    },
+    {
+      "candidate": "l_s092625478_objw1",
+      "relative_error": 0.0009298085688241248,
+      "source_file": "artifacts/main5_execution_gate_tolerance_blind_forward_validation_2026-04-28.json"
+    },
+    {
+      "candidate": "k_s09262555_objw1",
+      "relative_error": -0.0012004801920768018,
+      "source_file": "artifacts/main5_execution_gate_tolerance_blind_forward_validation_2026-04-28.json"
+    }
+  ],
+  "missing_validation_files": []
+}
