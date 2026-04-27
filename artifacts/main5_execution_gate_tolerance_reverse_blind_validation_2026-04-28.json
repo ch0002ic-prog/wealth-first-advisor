@@ -1,0 +1,28 @@
+{
+  "predictions": {
+    "l_s092625462_objw1_good_from_pred": -2.4700000000000003e-10,
+    "k_s09262542_objw1_good_from_pred": -2.3674999999999995e-09
+  },
+  "validation": {
+    "l_s092625462_objw1": {
+      "predicted_good_from": -2.4700000000000003e-10,
+      "observed_bad_through_nonnegative": null,
+      "observed_good_from_nonnegative": 0.0,
+      "tested_nonnegative_range": [
+        0.0,
+        1e-09
+      ],
+      "status": "always_good_in_tested_nonnegative_range"
+    },
+    "k_s09262542_objw1": {
+      "predicted_good_from": -2.3674999999999995e-09,
+      "observed_bad_through_nonnegative": null,
+      "observed_good_from_nonnegative": 0.0,
+      "tested_nonnegative_range": [
+        0.0,
+        1e-09
+      ],
+      "status": "always_good_in_tested_nonnegative_range"
+    }
+  }
+}
