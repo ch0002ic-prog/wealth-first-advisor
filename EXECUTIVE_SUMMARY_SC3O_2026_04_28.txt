@@ -1,3 +1,8 @@
+UPDATE (SC3P-SC3Z, 28 April 2026):
+- Promotion target revised to c_objw05 for reps=80.
+- Reason: deeper alternate-seed and broad-cost validation shows c_objw05 is strictly more robust.
+- Key edge-case fix: c_objw05 resolves seed 58 altblock_b24 suppression where c_objw075 regresses.
+
 ================================================================================
   MAIN5 DEEP INVESTIGATION: SC3K–SC3O EXECUTIVE SUMMARY
   Seed 53 Mechanism Discovery & c_objw075 Promotion (28 April 2026)

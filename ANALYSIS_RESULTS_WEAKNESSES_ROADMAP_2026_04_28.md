@@ -4,6 +4,29 @@
 
 ---
 
+## Update: SC3P-SC3Z Deeper Validation (Same Date)
+
+### Recommendation Shift
+- Previous lead: `c_objw075`
+- **Updated lead: `c_objw05` for reps=80**
+
+### Why The Shift Happened
+1. Alternate-seed tests found a new pocket at seed 58 (`altblock_b24_s4242`) where `c_objw075` re-suppresses.
+2. `c_objw05` resolves both discovered pockets (seed 53 and seed 58) without sacrificing original-seed performance.
+3. `c_objw05` dominates at higher costs (40/50) on seed 53 where `c_objw075` regresses.
+
+### Short Scorecard (SC3P-SC3Z)
+- `sc3w` (original odd seeds, c35): `c_objw05 == c_objw075 > incumbent`
+- `sc3x` (alt even seeds, c35): `c_objw05 > c_objw075` (only `c_objw05` keeps zero spread)
+- `sc3y` (seed53 broad costs): `c_objw05 >= c_objw075` at low costs and `c_objw05 > c_objw075` at costs 40/50
+- `sc3u` (seed58 scan): only `c_objw05` clears suppression
+- `sc3z` (reps=120, seeds53/58): no downside vs `c_objw075`
+
+### Implication For Wealth-First Optimization
+- Tail-objective weight remains a high-leverage knob, but deeper validation shows **0.50** is a more robust operating point than **0.75** under reps=80 deployment conditions.
+
+---
+
 ## Part 1: Investigation Results Summary
 
 ### What We Achieved

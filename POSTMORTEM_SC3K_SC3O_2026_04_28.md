@@ -5,6 +5,34 @@
 
 ---
 
+## Addendum: SC3P-SC3Z Deeper Validation (Same Date)
+
+### Why This Was Added
+After SC3O, deeper checks were run to test alternate seed generalization and broader cost sensitivity. These checks changed the lead candidate.
+
+### New Finding
+- `c_objw075` is not globally robust at reps=80.
+- A new weak pocket appears at seed 58 on `altblock_b24_s4242` where `c_objw075` drops to 0.5 executed steps.
+- `c_objw05` clears both seed 53 and seed 58 pockets while preserving parity on the original seed set.
+
+### Updated Recommendation
+✅ **PROMOTE c_objw05 as new incumbent for reps=80 operating regime**
+- Matches `c_objw075` on original 10-seed validation
+- Outperforms `c_objw075` on alternate-seed validation
+- Outperforms `c_objw075` on seed 53 at high costs (40/50)
+- No downside observed at reps=120 on seeds 53/58
+
+### Decisive SC3P-SC3Z Evidence
+1. `sc3x_altseed_objw05_vs_objw075`: `c_objw05` mtr=0.0176017092, steps=1.0, seed_range=0.0; `c_objw075` mtr=0.0174990403, steps=0.99375, seed_range=0.0010266890
+2. `sc3u_seed58_mech_scan_c35`: only `c_objw05` clears seed 58 (`mtr=0.0176017092`, `steps=1.0`), while `c_objw075` and incumbent remain at `steps=0.9375`
+3. `sc3y_cost_sensitivity_seed53_objw05`: `c_objw05` equals `c_objw075` at costs 20/25/30/35 and beats it at 40/50 where `c_objw075` re-suppresses
+4. `sc3z_rep120_seed53_58_objw05`: all candidates tie at reps=120 on seeds 53/58, indicating no high-reps penalty for `c_objw05`
+
+### Notes on Oversized Runs
+Two oversized duplicate confirmation sweeps (`sc4a`, `sc4b`) were intentionally terminated early once targeted panels became decisively conclusive, to avoid unnecessary compute burn.
+
+---
+
 ## Executive Summary
 
 ### Objective
