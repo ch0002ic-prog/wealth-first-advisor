@@ -1,0 +1,25 @@
+{
+  "sweep": [
+    {"threshold": 0.0010, "status": "fail"},
+    {"threshold": 0.0015, "status": "fail"},
+    {"threshold": 0.0020, "status": "fail"},
+    {"threshold": 0.0025, "status": "fail"},
+    {"threshold": 0.00264, "status": "pass"},
+    {"threshold": 0.00270, "status": "pass"},
+    {"threshold": 0.0030, "status": "pass"}
+  ],
+  "frontier": {
+    "pass_from": 0.00264,
+    "binding_metric": "prediction_error_summary_robust.max_abs_error",
+    "binding_value": 0.0026398958914296364
+  },
+  "robust_metrics": {
+    "mae": 0.00149983925240248,
+    "rmse": 0.0016420727501936607,
+    "max_abs_error": 0.0026398958914296364
+  },
+  "recommended_thresholds": {
+    "strict": 0.00264,
+    "operational": 0.00270
+  }
+}
