@@ -1,0 +1,43 @@
+{
+  "source_summary_csv": "artifacts/main5_deep_l468_vs_j6254_seed6_tol1e10_summary.csv",
+  "source_summary_json": "artifacts/main5_deep_l468_vs_j6254_seed6_tol1e10_summary.json",
+  "locked_tolerance": 1e-10,
+  "panel": {
+    "scenarios": "expanded",
+    "seeds": [
+      5,
+      17,
+      29,
+      37,
+      47,
+      57
+    ],
+    "costs": [
+      22,
+      25,
+      30,
+      35
+    ],
+    "reps": 40,
+    "rows_per_candidate": 192
+  },
+  "comparisons": {
+    "l468_vs_j6254": {
+      "delta_mean_test_relative": 1.3101264517700884e-09,
+      "delta_min_case_slack": 3.7368880559385254e-11,
+      "delta_mean_turnover": 7.386260792449986e-12,
+      "delta_mean_executed_steps": 0.0
+    },
+    "l468_vs_q": {
+      "delta_mean_test_relative": 0.0008688314019512505,
+      "delta_min_case_slack": 0.0005431733507487825,
+      "delta_mean_executed_steps": 0.05208333333333337
+    }
+  },
+  "winner": "l_s092625468_objw1",
+  "notes": [
+    "All three candidates show zero breaches on this panel.",
+    "l468 preserves a small but positive wealth-first edge over j6254.",
+    "strict max_supp=0.997 marks all 1.0-step candidates as activity violations; use boundary1-aligned max_supp=0.9988 for promotion ranking."
+  ]
+}
