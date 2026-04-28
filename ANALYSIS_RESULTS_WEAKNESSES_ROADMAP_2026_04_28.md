@@ -41,6 +41,20 @@
 - Re-run and complete `SC4C` to terminal summary artifact:
 	- `.venv/bin/python scripts/investigate_main5_deep.py --label deep_sc4c_expanded_20seeds_c35_signoff --scenario-pack expanded --candidates sc3e_incumbent_newseed,c_objw075,c_objw05 --seeds 40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59 --costs 35 --reps 80 --workers 4 --execution-gate-tolerance 1e-10`
 
+### SC4 Cross-Period Update (Same Date, New Evidence)
+- Cross-period canaries were added by extending `scripts/investigate_main5_deep.py` with `--returns-csv`, `--date-column`, `--start-date`, and `--end-date` support.
+- `2015-01-01..2019-12-31` (`deep_sc4e_crossperiod_2015_2019_core`) fails for all three candidates:
+	- all `8/8` cases breach for each candidate,
+	- mean test relative return is negative for every candidate,
+	- executed steps collapse to `0.25` with suppression near `99.8%`.
+- `2020-01-01..2026-04-17` initially looked green, but that exposed a runner-classification bug: rows with `gate_passed=false` and `0` executed steps were still being labeled `ok` if path-bootstrap slack was nonnegative.
+- After fixing the runner to treat `gate_passed=false` as a breach (`deep_sc4f_crossperiod_2020_2026_core_fixcheck`), all three candidates also fail `8/8` on that slice.
+
+### Updated Interpretation
+- `c_objw05` remains the best **within the original operating slice used by SC3P-SC3Z**, but it is **not yet a period-robust promoted incumbent**.
+- The deeper weakness is broader than seed 53/58 handling: the whole candidate family appears sample-dependent.
+- Cross-period validation is no longer a missing item; it is now an explicit blocker for production promotion.
+
 ---
 
 ## Part 1: Investigation Results Summary

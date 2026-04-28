@@ -8,6 +8,13 @@ INTERIM NOTE (SC4C/SC4D prefixes, same date):
 - Executed-prefix status remained all ok (no observed breaches) in captured portions.
 - Final recommendation remains c_objw05; legacy c_objw075 sections below are historical context.
 
+CROSS-PERIOD BLOCKER (SC4E/SC4F, same date):
+- Direct period-sliced canaries invalidate promotion beyond the original analysis slice.
+- 2015-2019: all three candidates fail all 8 cases.
+- 2020-2026 initially looked green, but that was a runner bug: zero-step `gate_passed=false` rows were misclassified as non-breaches.
+- After the gate-aware fix, 2020-2026 also fails all 8 cases for all three candidates.
+- Updated practical status: c_objw05 is the best in-slice candidate, but cross-period promotion is blocked.
+
 ================================================================================
   MAIN5 DEEP INVESTIGATION: SC3K–SC3O EXECUTIVE SUMMARY
   Seed 53 Mechanism Discovery & c_objw075 Promotion (28 April 2026)

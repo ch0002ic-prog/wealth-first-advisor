@@ -5,6 +5,7 @@ import argparse
 import json
 import os
 import subprocess
+import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
@@ -39,6 +40,43 @@ def get_scenarios(pack: str) -> list[dict[str, Any]]:
         return CORE_SCENARIOS + EXPANDED_EXTRA_SCENARIOS
     return CORE_SCENARIOS
 
+
+def _prepare_returns_csv(
+    *,
+    returns_csv: str,
+    date_column: str,
+    start_date: str | None,
+    end_date: str | None,
+    label: str,
+) -> tuple[str, int]:
+    frame = pd.read_csv(returns_csv)
+    if frame.empty:
+        raise ValueError(f"Returns CSV '{returns_csv}' is empty.")
+    if date_column not in frame.columns:
+        raise ValueError(f"Date column '{date_column}' not found in '{returns_csv}'.")
+
+    frame[date_column] = pd.to_datetime(frame[date_column], errors="coerce")
+    if frame[date_column].isna().any():
+        raise ValueError(f"Date column '{date_column}' in '{returns_csv}' contains unparseable values.")
+
+    filtered = frame.sort_values(date_column).copy()
+    if start_date is not None:
+        filtered = filtered.loc[filtered[date_column] >= pd.Timestamp(start_date)]
+    if end_date is not None:
+        filtered = filtered.loc[filtered[date_column] <= pd.Timestamp(end_date)]
+    if filtered.empty:
+        raise ValueError("Date filtering removed all rows from the returns CSV.")
+
+    if start_date is None and end_date is None:
+        return str(Path(returns_csv).resolve()), int(len(filtered))
+
+    safe_label = "".join(ch if ch.isalnum() or ch in ("-", "_") else "_" for ch in label)
+    tmp_dir = Path(tempfile.gettempdir()) / "wealth_first_main5"
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    tmp_path = tmp_dir / f"{safe_label}_returns_slice.csv"
+    filtered.to_csv(tmp_path, index=False)
+    return str(tmp_path), int(len(filtered))
+
 DEFAULT_SEEDS = [5, 17, 29]
 DEFAULT_COSTS = [22, 25, 30, 35]
 
@@ -48,6 +86,10 @@ BASE_PARAMS = {
     "max_spy_weight": 1.058647,
     "initial_spy_weight": 1.0,
 }
+
+DEFAULT_RETURNS_CSV = "data/demo_sleeves.csv"
+DEFAULT_BENCHMARK_COLUMN = "SPY_BENCHMARK"
+DEFAULT_DATE_COLUMN = "date"
 
 
 @dataclass(frozen=True)
@@ -3880,6 +3922,9 @@ def _run_one(
     reps: int,
     label: str,
     execution_gate_tolerance: float,
+    returns_csv: str,
+    benchmark_column: str,
+    date_column: str,
 ) -> dict[str, Any]:
     run_name = (
         f"{label}_{candidate.name}_{scenario['name']}"
@@ -3891,6 +3936,12 @@ def _run_one(
     cmd = [
         str(PYTHON_BIN),
         "src/wealth_first/main5.py",
+        "--returns-csv",
+        returns_csv,
+        "--benchmark-column",
+        benchmark_column,
+        "--date-column",
+        date_column,
         "--gate",
         "055",
         "--gate-scale",
@@ -4029,7 +4080,7 @@ def _run_one(
 
     p05 = float(summary.get("path_bootstrap_robust_min_test_relative_p05", float("nan")))
     gate_passed = bool(detail.get("gate_checks", {}).get("overall_passed", False))
-    breach = pd.isna(p05) or p05 < FIXED_PATH_THRESHOLD
+    breach = (not gate_passed) or pd.isna(p05) or p05 < FIXED_PATH_THRESHOLD
     return {
         "candidate": candidate.name,
         "scenario": scenario["name"],
@@ -4045,7 +4096,7 @@ def _run_one(
         "mean_turnover": float(summary.get("mean_turnover", 0.0)),
         "mean_test_executed_step_count": float(summary.get("mean_test_executed_step_count", 0.0)),
         "mean_test_gate_suppression_rate": float(summary.get("mean_test_gate_suppression_rate", 0.0)),
-        "error": None,
+        "error": None if gate_passed else "gate_checks_failed",
     }
 
 
@@ -4099,6 +4150,11 @@ def main() -> int:
     parser.add_argument("--reps", type=int, default=80)
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--label", type=str, default="deep_a")
+    parser.add_argument("--returns-csv", type=str, default=DEFAULT_RETURNS_CSV)
+    parser.add_argument("--benchmark-column", type=str, default=DEFAULT_BENCHMARK_COLUMN)
+    parser.add_argument("--date-column", type=str, default=DEFAULT_DATE_COLUMN)
+    parser.add_argument("--start-date", type=str, default=None)
+    parser.add_argument("--end-date", type=str, default=None)
     parser.add_argument("--seeds", type=str, default=",".join(str(s) for s in DEFAULT_SEEDS))
     parser.add_argument("--costs", type=str, default=",".join(str(c) for c in DEFAULT_COSTS))
     parser.add_argument(
@@ -4124,6 +4180,14 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    prepared_returns_csv, n_rows = _prepare_returns_csv(
+        returns_csv=args.returns_csv,
+        date_column=args.date_column,
+        start_date=args.start_date,
+        end_date=args.end_date,
+        label=args.label,
+    )
+
     seeds = parse_int_list(args.seeds)
     costs = parse_int_list(args.costs)
     scenarios = get_scenarios(args.scenario_pack)
@@ -4147,8 +4211,13 @@ def main() -> int:
     total = len(cases)
     print(
         f"Running {total} deep cases ({len(selected_candidates)} candidates x {len(scenarios)} scenarios x "
-        f"{len(seeds)} seeds x {len(costs)} costs), reps={args.reps}, workers={args.workers}"
+        f"{len(seeds)} seeds x {len(costs)} costs), reps={args.reps}, workers={args.workers}, rows={n_rows}"
     )
+    if args.start_date is not None or args.end_date is not None:
+        print(
+            f"Date window: start={args.start_date or 'MIN'} end={args.end_date or 'MAX'} "
+            f"via {prepared_returns_csv}"
+        )
 
     records: list[dict[str, Any]] = []
     done = 0
@@ -4163,6 +4232,9 @@ def main() -> int:
                 args.reps,
                 args.label,
                 args.execution_gate_tolerance,
+                prepared_returns_csv,
+                args.benchmark_column,
+                args.date_column,
             ): (c, sc, s, cost)
             for c, sc, s, cost in cases
         }
@@ -4207,6 +4279,12 @@ def main() -> int:
                 "min_steps": args.min_steps,
                 "max_supp": args.max_supp,
                 "execution_gate_tolerance": args.execution_gate_tolerance,
+                "returns_csv": prepared_returns_csv,
+                "benchmark_column": args.benchmark_column,
+                "date_column": args.date_column,
+                "start_date": args.start_date,
+                "end_date": args.end_date,
+                "n_rows": n_rows,
                 "candidates": [c.__dict__ for c in selected_candidates],
                 "summary": json.loads(summary_df.to_json(orient="records")),
             },

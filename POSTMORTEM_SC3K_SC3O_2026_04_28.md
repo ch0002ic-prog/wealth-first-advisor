@@ -31,6 +31,24 @@ After SC3O, deeper checks were run to test alternate seed generalization and bro
 ### Notes on Oversized Runs
 Two oversized duplicate confirmation sweeps (`sc4a`, `sc4b`) were intentionally terminated early once targeted panels became decisively conclusive, to avoid unnecessary compute burn.
 
+## Addendum: SC4 Cross-Period Canaries (Same Date)
+
+### Why This Matters
+The main remaining weakness was explicit cross-period uncertainty. That gap is now tested directly.
+
+### New Finding
+- `deep_sc4e_crossperiod_2015_2019_core` fails for all three candidates (`sc3e_incumbent_newseed`, `c_objw075`, `c_objw05`): each posts `8/8` breaches with negative mean test return and only `0.25` executed steps on average.
+- `deep_sc4f_crossperiod_2020_2026_core` initially appeared to pass, but this was a runner-classification bug: the deep runner treated `gate_passed=false` rows as non-breaches whenever path-bootstrap slack stayed nonnegative.
+- After fixing `scripts/investigate_main5_deep.py` so gate failures count as breaches, `deep_sc4f_crossperiod_2020_2026_core_fixcheck` also fails `8/8` for all three candidates. Those rows are inert zero-step policies (`mean_test_relative=0`, `mean_executed_steps=0`, suppression `100%`).
+
+### Updated Recommendation State
+`c_objw05` is still the best candidate on the original SC3 slice, but **cross-period promotion is blocked**.
+
+### Practical Conclusion
+- The current candidate family is not yet portable across materially different historical windows.
+- The ranking question (`c_objw05` vs `c_objw075`) is now secondary to the larger issue: the whole local mechanism family appears sample-dependent.
+- Future promotion language should be narrowed to "best in-slice candidate" until a new mechanism survives cross-period validation.
+
 ---
 
 ## Executive Summary
