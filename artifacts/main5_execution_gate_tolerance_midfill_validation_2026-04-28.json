@@ -1,0 +1,36 @@
+{
+  "validation": {
+    "l_s092625464_objw1": {
+      "good_from_nonnegative": 0.0,
+      "tested_range": [
+        0.0,
+        2e-10
+      ],
+      "status": "always_good_in_tested_range"
+    },
+    "l_s092625466_objw1": {
+      "good_from_nonnegative": 0.0,
+      "tested_range": [
+        0.0,
+        2e-10
+      ],
+      "status": "always_good_in_tested_range"
+    },
+    "k_s09262544_objw1": {
+      "good_from_nonnegative": 0.0,
+      "tested_range": [
+        0.0,
+        2e-10
+      ],
+      "status": "always_good_in_tested_range"
+    },
+    "k_s09262546_objw1": {
+      "good_from_nonnegative": 0.0,
+      "tested_range": [
+        0.0,
+        2e-10
+      ],
+      "status": "always_good_in_tested_range"
+    }
+  }
+}

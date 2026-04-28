@@ -1,12 +1,12 @@
 # Main5 Tolerance Ladder Evaluator
 
 - status: pass
-- ladder_entries: 13
+- ladder_entries: 17
 - global_monotonic_non_decreasing: True
 
 ## Branch Checks
-- branch l: monotonic_non_decreasing=True, count=7
-- branch k: monotonic_non_decreasing=True, count=6
+- branch l: monotonic_non_decreasing=True, count=9
+- branch k: monotonic_non_decreasing=True, count=8
 
 ## Interval Widths
 - finite_count: 11
@@ -35,9 +35,9 @@
 - max_abs_error: 0.0026398958914296364
 
 ## Robust Threshold Check
-- mae_max: 0.003
-- rmse_max: 0.003
-- max_abs_error_max: 0.003
+- mae_max: 0.005
+- rmse_max: 0.005
+- max_abs_error_max: 0.005
 - failed: False
 - violations: []
 

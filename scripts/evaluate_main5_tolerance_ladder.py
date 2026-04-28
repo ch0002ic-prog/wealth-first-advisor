@@ -65,7 +65,7 @@ def main() -> int:
     parser.add_argument(
         "--ladder-json",
         type=Path,
-        default=Path("artifacts/main5_execution_gate_tolerance_continuity_ladder_extended_2026-04-28-v3.json"),
+        default=Path("artifacts/main5_execution_gate_tolerance_continuity_ladder_extended_2026-04-28-v4.json"),
         help="Path to ladder JSON artifact.",
     )
     parser.add_argument(

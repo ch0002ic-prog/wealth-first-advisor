@@ -1,9 +1,13 @@
-# Main5 Execution-Gate Tolerance Continuity Ladder (Extended V3, 2026-04-28)
+# Main5 Execution-Gate Tolerance Continuity Ladder (Extended V4, 2026-04-28)
 
 | candidate | bad_through | good_from | interval_width | source |
 |---|---:|---:|---:|---|
 | l_s092625462_objw1 | NA | 0 | NA | reverse-blind-validated |
 | k_s09262542_objw1 | NA | 0 | NA | reverse-blind-validated |
+| l_s092625464_objw1 | NA | 0 | NA | midfill-validated |
+| l_s092625466_objw1 | NA | 0 | NA | midfill-validated |
+| k_s09262544_objw1 | NA | 0 | NA | midfill-validated |
+| k_s09262546_objw1 | NA | 0 | NA | midfill-validated |
 | l_s092625468_objw1 | 4e-11 | 5e-11 | 1.000e-11 | prior-tight |
 | l_s092625470_objw1 | 1.4696e-10 | 1.4697e-10 | 1.000e-14 | prior-tight |
 | l_s092625472_objw1 | 2.47e-10 | 2.48e-10 | 1.000e-12 | prior-tight |
@@ -19,6 +23,10 @@
 Good-threshold ordering:
 - l_s092625462_objw1: 0
 - k_s09262542_objw1: 0
+- l_s092625464_objw1: 0
+- l_s092625466_objw1: 0
+- k_s09262544_objw1: 0
+- k_s09262546_objw1: 0
 - l_s092625468_objw1: 5e-11
 - l_s092625470_objw1: 1.4697e-10
 - l_s092625472_objw1: 2.48e-10

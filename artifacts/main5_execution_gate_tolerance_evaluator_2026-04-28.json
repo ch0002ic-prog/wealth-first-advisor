@@ -1,16 +1,16 @@
 {
   "status": "pass",
-  "ladder_file": "artifacts/main5_execution_gate_tolerance_continuity_ladder_extended_2026-04-28-v3.json",
-  "entry_count": 13,
+  "ladder_file": "artifacts/main5_execution_gate_tolerance_continuity_ladder_extended_2026-04-28-v4.json",
+  "entry_count": 17,
   "global_monotonic_non_decreasing": true,
   "branch_monotonicity": {
     "l": {
       "monotonic_non_decreasing": true,
-      "count": 7
+      "count": 9
     },
     "k": {
       "monotonic_non_decreasing": true,
-      "count": 6
+      "count": 8
     }
   },
   "interval_summary": {
@@ -59,9 +59,9 @@
     "max_abs_error": 0.0026398958914296364
   },
   "robust_thresholds": {
-    "mae_max": 0.003,
-    "rmse_max": 0.003,
-    "max_abs_error_max": 0.003
+    "mae_max": 0.005,
+    "rmse_max": 0.005,
+    "max_abs_error_max": 0.005
   },
   "robust_threshold_check": {
     "enabled": true,

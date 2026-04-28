@@ -13,6 +13,30 @@
       "source": "reverse-blind-validated"
     },
     {
+      "candidate": "l_s092625464_objw1",
+      "bad_through": null,
+      "good_from": 0.0,
+      "source": "midfill-validated"
+    },
+    {
+      "candidate": "l_s092625466_objw1",
+      "bad_through": null,
+      "good_from": 0.0,
+      "source": "midfill-validated"
+    },
+    {
+      "candidate": "k_s09262544_objw1",
+      "bad_through": null,
+      "good_from": 0.0,
+      "source": "midfill-validated"
+    },
+    {
+      "candidate": "k_s09262546_objw1",
+      "bad_through": null,
+      "good_from": 0.0,
+      "source": "midfill-validated"
+    },
+    {
       "candidate": "l_s092625468_objw1",
       "bad_through": 4e-11,
       "good_from": 5e-11,
