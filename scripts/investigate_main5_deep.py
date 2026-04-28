@@ -60,6 +60,10 @@ class Candidate:
     action_smoothing: float
     scale_turnover_penalty: float
     slippage_bps_multiplier: float = 1.0
+    # Execution gate controls (default = None → keep main5 default hard gate)
+    execution_gate_mode: str | None = None
+    smooth_gate_width_ratio: float | None = None
+    smooth_gate_floor: float | None = None
     # Secondary BASE_PARAMS overrides (default = None → use BASE_PARAMS value)
     ridge_l2: float | None = None
     min_spy_weight: float | None = None
@@ -2764,6 +2768,84 @@ CANDIDATES = [
             validation_hard_min_step_rate=0.001,
             validation_hard_max_suppression_rate=0.9988,
         ),
+        # deep_zu: execution-gate mechanism sweep (smooth gate) on l468.
+        # Prior deeper probes exhausted local hard-gate neighborhoods; this branch tests whether
+        # replacing hard execution gating with smooth gating can escape the flat tie plateau.
+        Candidate(
+            name="zu_l468_smooth_w15_f00",
+            forward_horizon=10,
+            no_trade_band=0.050,
+            min_signal_scale=-0.20,
+            max_signal_scale=0.20,
+            action_smoothing=0.923625468,
+            scale_turnover_penalty=2.9952,
+            execution_gate_mode="smooth",
+            smooth_gate_width_ratio=0.15,
+            smooth_gate_floor=0.0,
+            validation_tail_bootstrap_objective_weight=1.0,
+            validation_hard_min_step_rate=0.001,
+            validation_hard_max_suppression_rate=0.9988,
+        ),
+        Candidate(
+            name="zu_l468_smooth_w25_f00",
+            forward_horizon=10,
+            no_trade_band=0.050,
+            min_signal_scale=-0.20,
+            max_signal_scale=0.20,
+            action_smoothing=0.923625468,
+            scale_turnover_penalty=2.9952,
+            execution_gate_mode="smooth",
+            smooth_gate_width_ratio=0.25,
+            smooth_gate_floor=0.0,
+            validation_tail_bootstrap_objective_weight=1.0,
+            validation_hard_min_step_rate=0.001,
+            validation_hard_max_suppression_rate=0.9988,
+        ),
+        Candidate(
+            name="zu_l468_smooth_w40_f00",
+            forward_horizon=10,
+            no_trade_band=0.050,
+            min_signal_scale=-0.20,
+            max_signal_scale=0.20,
+            action_smoothing=0.923625468,
+            scale_turnover_penalty=2.9952,
+            execution_gate_mode="smooth",
+            smooth_gate_width_ratio=0.40,
+            smooth_gate_floor=0.0,
+            validation_tail_bootstrap_objective_weight=1.0,
+            validation_hard_min_step_rate=0.001,
+            validation_hard_max_suppression_rate=0.9988,
+        ),
+        Candidate(
+            name="zu_l468_smooth_w25_f05",
+            forward_horizon=10,
+            no_trade_band=0.050,
+            min_signal_scale=-0.20,
+            max_signal_scale=0.20,
+            action_smoothing=0.923625468,
+            scale_turnover_penalty=2.9952,
+            execution_gate_mode="smooth",
+            smooth_gate_width_ratio=0.25,
+            smooth_gate_floor=0.05,
+            validation_tail_bootstrap_objective_weight=1.0,
+            validation_hard_min_step_rate=0.001,
+            validation_hard_max_suppression_rate=0.9988,
+        ),
+        Candidate(
+            name="zu_l468_smooth_w40_f05",
+            forward_horizon=10,
+            no_trade_band=0.050,
+            min_signal_scale=-0.20,
+            max_signal_scale=0.20,
+            action_smoothing=0.923625468,
+            scale_turnover_penalty=2.9952,
+            execution_gate_mode="smooth",
+            smooth_gate_width_ratio=0.40,
+            smooth_gate_floor=0.05,
+            validation_tail_bootstrap_objective_weight=1.0,
+            validation_hard_min_step_rate=0.001,
+            validation_hard_max_suppression_rate=0.9988,
+        ),
 ]
 
 
@@ -2860,6 +2942,13 @@ def _run_one(
         str(scenario["path_seed"] + seed),
         "--no-fail-on-gate",
     ]
+
+    if candidate.execution_gate_mode is not None:
+        cmd.extend(["--execution-gate-mode", candidate.execution_gate_mode])
+    if candidate.smooth_gate_width_ratio is not None:
+        cmd.extend(["--smooth-gate-width-ratio", str(candidate.smooth_gate_width_ratio)])
+    if candidate.smooth_gate_floor is not None:
+        cmd.extend(["--smooth-gate-floor", str(candidate.smooth_gate_floor)])
 
     if candidate.validation_step_rate_target is not None:
         cmd.extend(["--validation-step-rate-target", str(candidate.validation_step_rate_target)])

@@ -295,7 +295,7 @@ def _simulate_signal_path(
     weights = np.empty_like(target_weights)
     weights[0] = cfg.initial_spy_weight
     proposed_steps = np.zeros_like(target_weights)
-    gate_suppressed = np.zeros_like(target_weights, dtype=bool)
+    gate_suppression_mass = np.zeros_like(target_weights, dtype=float)
     for t in range(1, len(target_weights)):
         raw_target_delta = target_weights[t] - weights[t - 1]
         candidate_weight = weights[t - 1] + cfg.action_smoothing * raw_target_delta
@@ -306,7 +306,7 @@ def _simulate_signal_path(
         if cfg.execution_gate_mode == "hard":
             threshold = deadband + max(float(cfg.execution_gate_tolerance), 0.0)
             if abs(raw_target_delta) <= threshold:
-                gate_suppressed[t] = True
+                gate_suppression_mass[t] = 1.0
                 candidate_weight = weights[t - 1]
         elif cfg.execution_gate_mode == "smooth":
             transition = max(abs(deadband) * cfg.smooth_gate_width_ratio, 1e-8)
@@ -316,7 +316,7 @@ def _simulate_signal_path(
             scale = cfg.smooth_gate_floor + (1.0 - cfg.smooth_gate_floor) * scale
             adjusted_target_delta = raw_target_delta * scale
             candidate_weight = weights[t - 1] + cfg.action_smoothing * adjusted_target_delta
-            gate_suppressed[t] = bool(scale < 0.5)
+            gate_suppression_mass[t] = 1.0 - float(scale)
         else:
             raise ValueError(f"Unsupported execution_gate_mode: {cfg.execution_gate_mode}")
         weights[t] = float(np.clip(candidate_weight, cfg.min_spy_weight, cfg.max_spy_weight))
@@ -338,7 +338,7 @@ def _simulate_signal_path(
     step_count = max(len(target_weights) - 1, 0)
     signal_abs = np.abs(signal_clipped)
     step_slice = proposed_steps[1:]
-    gate_slice = gate_suppressed[1:]
+    gate_slice = gate_suppression_mass[1:]
     turnover_slice = turnovers[1:]
     total_return = wealth - 1.0
     relative_return = wealth / max(spy_wealth, 1e-8) - 1.0
@@ -362,7 +362,7 @@ def _simulate_signal_path(
         "proposed_step_max": float(np.max(step_slice)) if step_count > 0 else 0.0,
         "proposed_steps_over_band": int(np.sum(step_slice >= cfg.no_trade_band)) if step_count > 0 else 0,
         "executed_step_count": int(np.sum(turnover_slice > 1e-12)) if step_count > 0 else 0,
-        "gate_suppressed_step_count": int(np.sum(gate_slice)) if step_count > 0 else 0,
+        "gate_suppressed_step_count": int(np.rint(np.sum(gate_slice))) if step_count > 0 else 0,
         "gate_suppression_rate": float(np.mean(gate_slice)) if step_count > 0 else 0.0,
     }
 
