@@ -34,3 +34,10 @@
 - rmse: 0.0016420727501936607
 - max_abs_error: 0.0026398958914296364
 
+## Robust Threshold Check
+- mae_max: 0.005
+- rmse_max: 0.005
+- max_abs_error_max: 0.005
+- failed: False
+- violations: []
+

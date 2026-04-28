@@ -97,6 +97,24 @@ def main() -> int:
         action="store_true",
         help="Include per-validation-family error summaries and robust aggregate metrics.",
     )
+    parser.add_argument(
+        "--robust-mae-max",
+        type=float,
+        default=None,
+        help="Optional fail threshold for robust MAE.",
+    )
+    parser.add_argument(
+        "--robust-rmse-max",
+        type=float,
+        default=None,
+        help="Optional fail threshold for robust RMSE.",
+    )
+    parser.add_argument(
+        "--robust-max-abs-error-max",
+        type=float,
+        default=None,
+        help="Optional fail threshold for robust max absolute error.",
+    )
     args = parser.parse_args()
 
     ladder_data = load_json(args.ladder_json)
@@ -192,6 +210,40 @@ def main() -> int:
         robust_errors.append(row["relative_error"])
     robust_error_summary = summarize_errors(robust_errors)
 
+    robust_thresholds = {
+        "mae_max": args.robust_mae_max,
+        "rmse_max": args.robust_rmse_max,
+        "max_abs_error_max": args.robust_max_abs_error_max,
+    }
+    robust_threshold_check = {
+        "enabled": any(v is not None for v in robust_thresholds.values()),
+        "failed": False,
+        "violations": [],
+    }
+
+    if robust_thresholds["mae_max"] is not None and robust_error_summary["mae"] is not None:
+        if robust_error_summary["mae"] > robust_thresholds["mae_max"]:
+            robust_threshold_check["failed"] = True
+            robust_threshold_check["violations"].append(
+                f"robust_mae {robust_error_summary['mae']} > {robust_thresholds['mae_max']}"
+            )
+    if robust_thresholds["rmse_max"] is not None and robust_error_summary["rmse"] is not None:
+        if robust_error_summary["rmse"] > robust_thresholds["rmse_max"]:
+            robust_threshold_check["failed"] = True
+            robust_threshold_check["violations"].append(
+                f"robust_rmse {robust_error_summary['rmse']} > {robust_thresholds['rmse_max']}"
+            )
+    if (
+        robust_thresholds["max_abs_error_max"] is not None
+        and robust_error_summary["max_abs_error"] is not None
+    ):
+        if robust_error_summary["max_abs_error"] > robust_thresholds["max_abs_error_max"]:
+            robust_threshold_check["failed"] = True
+            robust_threshold_check["violations"].append(
+                "robust_max_abs_error "
+                f"{robust_error_summary['max_abs_error']} > {robust_thresholds['max_abs_error_max']}"
+            )
+
     result = {
         "status": "pass",
         "ladder_file": str(args.ladder_json),
@@ -202,6 +254,8 @@ def main() -> int:
         "prediction_error_summary": error_summary,
         "prediction_error_summary_by_family": error_summary_by_family,
         "prediction_error_summary_robust": robust_error_summary,
+        "robust_thresholds": robust_thresholds,
+        "robust_threshold_check": robust_threshold_check,
         "prediction_error_rows": prediction_error_rows,
         "missing_validation_files": missing_validation_files,
     }
@@ -211,6 +265,8 @@ def main() -> int:
     if any(not v["monotonic_non_decreasing"] for v in branch_monotonic.values()):
         result["status"] = "fail"
     if interval_summary["invalid_width_candidates"]:
+        result["status"] = "fail"
+    if robust_threshold_check["failed"]:
         result["status"] = "fail"
 
     args.out_json.parent.mkdir(parents=True, exist_ok=True)
@@ -258,6 +314,14 @@ def main() -> int:
         md_lines.append(f"- mae: {robust_error_summary['mae']}")
         md_lines.append(f"- rmse: {robust_error_summary['rmse']}")
         md_lines.append(f"- max_abs_error: {robust_error_summary['max_abs_error']}")
+        md_lines.append("")
+    if robust_threshold_check["enabled"]:
+        md_lines.append("## Robust Threshold Check")
+        md_lines.append(f"- mae_max: {robust_thresholds['mae_max']}")
+        md_lines.append(f"- rmse_max: {robust_thresholds['rmse_max']}")
+        md_lines.append(f"- max_abs_error_max: {robust_thresholds['max_abs_error_max']}")
+        md_lines.append(f"- failed: {robust_threshold_check['failed']}")
+        md_lines.append(f"- violations: {robust_threshold_check['violations']}")
         md_lines.append("")
     if missing_validation_files:
         md_lines.append("## Missing Validation Files")

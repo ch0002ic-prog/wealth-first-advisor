@@ -58,6 +58,16 @@
     "rmse": 0.0016420727501936607,
     "max_abs_error": 0.0026398958914296364
   },
+  "robust_thresholds": {
+    "mae_max": 0.005,
+    "rmse_max": 0.005,
+    "max_abs_error_max": 0.005
+  },
+  "robust_threshold_check": {
+    "enabled": true,
+    "failed": false,
+    "violations": []
+  },
   "prediction_error_rows": [
     {
       "candidate": "l_s092625474_objw1",
