@@ -1,7 +1,7 @@
 # Main5 Deep Investigation: SC3K–SC3O Postmortem
 **Date**: 28 April 2026  
 **Phase**: Seed 53 Robustness & Mechanism Discovery  
-**Status**: ✅ PROMOTION READY
+**Status**: ✅ UPDATED - PROMOTE c_objw05 (SC3P-SC3Z confirmed); SC4 closure runs in progress
 
 ---
 
@@ -45,7 +45,7 @@ Seed 53 weakness is **scenario-specific and mechanism-tunable**, not fundamental
 - **Solution**: Reduce tail-weight to 0.75 → mechanism `c_objw075` eliminates pocket + achieves 10-way seed uniformity
 
 ### Recommendation
-✅ **PROMOTE c_objw075 as new incumbent**  
+✅ **PROMOTE c_objw05 as new incumbent (reps=80 operating regime)**
 - Eliminates seed 53 pocket completely
 - Achieves perfect per-seed uniformity (zero spread across 10 seeds)
 - Aggregate mtr gain: +0.53% (+0.000093 bp)
@@ -213,7 +213,7 @@ At **reps=120–160** (extended runs):
 **Production Implication**:
 - If reps=80 is standard → incumbent has exploitable pocket; c_objw075 solves it
 - If reps≥120 is standard → incumbent pocket is regime-artifact; either candidate acceptable
-- c_objw075 is **safer** because it's robust across both regimes
+- c_objw05 is the preferred deployment point for reps=80 after alternate-seed and broad-cost validation
 
 ### 3. Per-Seed Uniformity Advantage
 

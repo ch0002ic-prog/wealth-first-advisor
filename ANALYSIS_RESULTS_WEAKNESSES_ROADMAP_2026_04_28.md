@@ -25,6 +25,22 @@
 ### Implication For Wealth-First Optimization
 - Tail-objective weight remains a high-leverage knob, but deeper validation shows **0.50** is a more robust operating point than **0.75** under reps=80 deployment conditions.
 
+### SC4 Interim Validation Note (Same Date, Post-SC3Z)
+- Two larger closure sweeps were launched to close remaining gaps:
+	- `SC4C`: expanded scenarios, 20 seeds, cost 35
+	- `SC4D`: seed 58 broad cost sweep (20/25/30/35/40/50)
+- Runs were intentionally stopped early to avoid unnecessary compute burn once the signal converged.
+- Captured prefixes remained **all green** with no observed breaches in the executed portions:
+	- `SC4D` prefix covered 124/144 cases before stop (all status `ok`)
+	- `SC4C` prefix covered 244/480 cases before stop (all status `ok`)
+- Interpreted outcome: no contradiction to the `c_objw05` recommendation; interim evidence continues to support robustness.
+
+### Closure Commands For Deterministic Final Signoff
+- Re-run and complete `SC4D` to terminal summary artifact:
+	- `.venv/bin/python scripts/investigate_main5_deep.py --label deep_sc4d_seed58_cost_sensitivity --scenario-pack expanded --candidates sc3e_incumbent_newseed,c_objw075,c_objw05 --seeds 58 --costs 20,25,30,35,40,50 --reps 80 --workers 4 --execution-gate-tolerance 1e-10`
+- Re-run and complete `SC4C` to terminal summary artifact:
+	- `.venv/bin/python scripts/investigate_main5_deep.py --label deep_sc4c_expanded_20seeds_c35_signoff --scenario-pack expanded --candidates sc3e_incumbent_newseed,c_objw075,c_objw05 --seeds 40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59 --costs 35 --reps 80 --workers 4 --execution-gate-tolerance 1e-10`
+
 ---
 
 ## Part 1: Investigation Results Summary

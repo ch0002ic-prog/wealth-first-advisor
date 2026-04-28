@@ -3,6 +3,11 @@ UPDATE (SC3P-SC3Z, 28 April 2026):
 - Reason: deeper alternate-seed and broad-cost validation shows c_objw05 is strictly more robust.
 - Key edge-case fix: c_objw05 resolves seed 58 altblock_b24 suppression where c_objw075 regresses.
 
+INTERIM NOTE (SC4C/SC4D prefixes, same date):
+- Large closure sweeps were run and intentionally stopped early after convergent green prefixes.
+- Executed-prefix status remained all ok (no observed breaches) in captured portions.
+- Final recommendation remains c_objw05; legacy c_objw075 sections below are historical context.
+
 ================================================================================
   MAIN5 DEEP INVESTIGATION: SC3K–SC3O EXECUTIVE SUMMARY
   Seed 53 Mechanism Discovery & c_objw075 Promotion (28 April 2026)

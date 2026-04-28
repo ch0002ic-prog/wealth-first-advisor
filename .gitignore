@@ -19,5 +19,6 @@ artifacts/*_inspect/
 artifacts/*_logs/
 artifacts/*.log
 artifacts/archive/
+artifacts/main5_deep_runs/
 data/tradingview_*.jsonl
 data/tradingview_truth.csv
