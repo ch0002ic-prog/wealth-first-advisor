@@ -221,8 +221,12 @@ def main() -> int:
 
     robust_errors = []
     for row in prediction_error_rows:
-        # Exclude surrogate (historical coarse model) and reverse-blind
-        # from robust aggregate to focus on current local predictive quality.
+        # Exclude surrogate (historical coarse model) and reverse-blind from robust aggregate.
+        # Surrogate is excluded because k52 (k_s09262552_objw1) has a structural 61.854%
+        # extrapolation error caused by non-log-linear manifold shape on the k-branch; the
+        # surrogate family must not serve as a promotion signal (see
+        # main5_surrogate_outlier_exclusion_policy_2026-04-28.md for full diagnosis).
+        # Reverse-blind is excluded because midpoint-relative error is undefined at the zero edge.
         if row["family"] in {"surrogate", "reverse_blind"}:
             continue
         robust_errors.append(row["relative_error"])

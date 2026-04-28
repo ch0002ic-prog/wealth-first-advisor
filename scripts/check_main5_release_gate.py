@@ -110,6 +110,25 @@ def main() -> int:
             f"boundary1_top_candidate_mismatch expected={args.expected_winner} got={top_b1}"
         )
 
+    # Two-threshold activity cap policy check.
+    # Promotion uses boundary1-aligned threshold (max_supp=0.9988); strict threshold
+    # (max_supp=0.997) is reserved for stress diagnostics only and MUST NOT gate promotion.
+    # Here we document whether the strict threshold would invert the ranking — if it does,
+    # this is expected and correct (strict inverts toward lower-return 1.5-step candidates).
+    strict = activity.get("summary", {}).get("strict_0997", [])
+    top_strict = strict[0]["candidate"] if strict else None
+    strict_inverts = top_strict != args.expected_winner if top_strict is not None else None
+    checks["activity_cap_policy"] = {
+        "promotion_threshold": "boundary1_max_supp_09988",
+        "stress_diagnostic_threshold": "strict_max_supp_0997",
+        "strict_0997_top_candidate": top_strict,
+        "strict_cap_inverts_ranking": strict_inverts,
+        "policy": (
+            "strict threshold (0.997) is for stress diagnostics only; "
+            "boundary1 (0.9988) is the binding promotion criterion"
+        ),
+    }
+
     result = {
         "status": "pass" if not failures else "fail",
         "checks": checks,

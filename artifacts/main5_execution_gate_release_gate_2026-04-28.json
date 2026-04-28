@@ -7,7 +7,14 @@
     "robust_threshold_check_failed": false,
     "promotion_winner": "l_s092625468_objw1",
     "l468_vs_j6254_delta_mean_test_relative": 1.3101264517700884e-09,
-    "boundary1_top_candidate": "l_s092625468_objw1"
+    "boundary1_top_candidate": "l_s092625468_objw1",
+    "activity_cap_policy": {
+      "promotion_threshold": "boundary1_max_supp_09988",
+      "stress_diagnostic_threshold": "strict_max_supp_0997",
+      "strict_0997_top_candidate": "j_s0926258_objw1",
+      "strict_cap_inverts_ranking": true,
+      "policy": "strict threshold (0.997) is for stress diagnostics only; boundary1 (0.9988) is the binding promotion criterion"
+    }
   },
   "failures": []
 }
