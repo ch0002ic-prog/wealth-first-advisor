@@ -1,0 +1,2 @@
+candidate,rows,breach_count,breach_rate,min_case_slack,mean_case_slack,mean_test_relative,mean_validation_relative,mean_turnover,mean_executed_steps,mean_gate_suppression,seed_return_range,activity_violations,cost35_breach_count,cost35_min_slack
+sc3e_incumbent_newseed,204,0,0.0,0.008507695068133342,0.012036713892995494,0.017618887084023153,0.01120883453658257,0.00010031442143448703,1.0,0.9978448275862065,0.0013756165862194095,204,0,0.008507695068133342

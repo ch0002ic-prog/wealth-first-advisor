@@ -79,16 +79,22 @@ def build_main5_features(spy_returns: pd.Series) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 
 
-def _build_main5_target(spy_returns: pd.Series, horizon: int = 21) -> np.ndarray:
+def _build_main5_target(
+    spy_returns: pd.Series,
+    horizon: int = 21,
+    target_temperature: float = 1.0,
+) -> np.ndarray:
     """Compute tanh-normalised forward ``horizon``-day cumulative return for every row.
 
     For training row t the target is:
-        tanh( fwd[t] / std_all )
+        tanh( fwd[t] / (std_all * target_temperature) )
     where fwd[t] = prod(1 + spy[t+1 : t+1+horizon]) - 1.
 
     The last ``horizon`` rows have no complete forward window and are set to 0.0;
     the caller should exclude them from training.
     """
+    if target_temperature <= 0.0:
+        raise ValueError("target_temperature must be positive")
     spy_arr = spy_returns.to_numpy(dtype=float)
     n = len(spy_arr)
     fwd = np.zeros(n, dtype=float)
@@ -96,7 +102,7 @@ def _build_main5_target(spy_returns: pd.Series, horizon: int = 21) -> np.ndarray
         fwd[t] = float(np.prod(1.0 + spy_arr[t + 1 : t + 1 + horizon]) - 1.0)
     # normalise
     valid_fwd = fwd[: n - horizon]
-    target_std = max(float(np.std(valid_fwd, ddof=0)), 1e-8)
+    target_std = max(float(np.std(valid_fwd, ddof=0)) * target_temperature, 1e-8)
     return np.tanh(fwd / target_std)
 
 
@@ -113,6 +119,7 @@ def _train_main5_model(
     validation_end_index: int,
     cfg: MediumCapacityConfig,
     horizon: int = 21,
+    target_temperature: float = 1.0,
 ) -> tuple[MediumCapacityParams, dict[str, Any]]:
     """Train main5 ridge model with horizon-aligned forward-return target.
 
@@ -136,7 +143,11 @@ def _train_main5_model(
     train_features_raw = features.iloc[:n_valid].to_numpy(dtype=float)
 
     # Build full forward-target array over the entire series then slice
-    full_target = _build_main5_target(spy_returns, horizon=horizon)
+    full_target = _build_main5_target(
+        spy_returns,
+        horizon=horizon,
+        target_temperature=target_temperature,
+    )
     train_target = full_target[:n_valid]
 
     # Standardise training features
@@ -289,6 +300,7 @@ class Main5Config:
     validation_fraction: float = 0.15
     test_fraction: float = 0.10
     forward_horizon: int = 21
+    target_temperature: float = 1.0
     medium_capacity_cfg: MediumCapacityConfig = MediumCapacityConfig()
 
 
@@ -484,6 +496,7 @@ def _train_policy(
                 validation_end_index=val_end,
                 cfg=cfg.medium_capacity_cfg,
                 horizon=cfg.forward_horizon,
+                target_temperature=cfg.target_temperature,
             )
             (
                 test_total_return,
@@ -611,6 +624,7 @@ def main(
     gate_scale: str = "bps",
     fail_on_gate: bool = True,
     forward_horizon: int = 21,
+    target_temperature: float = 1.0,
     path_bootstrap_reps: int = 0,
     path_bootstrap_block_size: int = 20,
     path_bootstrap_seed: int = 12345,
@@ -682,6 +696,7 @@ def main(
         min_active_fraction=min_active_fraction,
         n_folds=n_folds,
         forward_horizon=forward_horizon,
+        target_temperature=target_temperature,
         medium_capacity_cfg=medium_cfg,
     )
 
@@ -691,7 +706,8 @@ def main(
         file=sys.stderr,
     )
     print(
-        f"Training main5 policy: {n_folds} folds, forward_horizon={forward_horizon}d",
+        f"Training main5 policy: {n_folds} folds, forward_horizon={forward_horizon}d, "
+        f"target_temperature={target_temperature:.3f}",
         file=sys.stderr,
     )
 
@@ -778,7 +794,11 @@ def main(
 
     # Summary to stderr
     print("\n=== Main5 Summary ===", file=sys.stderr)
-    print(f"Gate: {gate}  Folds: {n_folds}  Seed: {seed}  Horizon: {forward_horizon}d", file=sys.stderr)
+    print(
+        f"Gate: {gate}  Folds: {n_folds}  Seed: {seed}  Horizon: {forward_horizon}d  "
+        f"TargetTemp: {target_temperature:.3f}",
+        file=sys.stderr,
+    )
     print(f"Mean test relative return:       {mean_test_relative:.6f}", file=sys.stderr)
     print(f"Mean validation relative return: {mean_validation:.6f}", file=sys.stderr)
     print(f"Beat hold: {beat_hold:.1%}  Active: {active_fraction:.1%}  Turnover: {mean_turnover:.6f}", file=sys.stderr)
@@ -863,6 +883,7 @@ if __name__ == "__main__":
     parser.add_argument("--min-active-fraction", type=float, default=0.01)
     parser.add_argument("--no-fail-on-gate", action="store_true")
     parser.add_argument("--forward-horizon", type=int, default=21)
+    parser.add_argument("--target-temperature", type=float, default=1.0)
     parser.add_argument("--path-bootstrap-reps", type=int, default=0)
     parser.add_argument("--path-bootstrap-block-size", type=int, default=20)
     parser.add_argument("--path-bootstrap-seed", type=int, default=12345)
@@ -916,6 +937,7 @@ if __name__ == "__main__":
             gate_scale=args.gate_scale,
             fail_on_gate=not args.no_fail_on_gate,
             forward_horizon=args.forward_horizon,
+            target_temperature=args.target_temperature,
             path_bootstrap_reps=args.path_bootstrap_reps,
             path_bootstrap_block_size=args.path_bootstrap_block_size,
             path_bootstrap_seed=args.path_bootstrap_seed,
