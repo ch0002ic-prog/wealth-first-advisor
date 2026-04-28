@@ -115,6 +115,21 @@ def main() -> int:
         default=None,
         help="Optional fail threshold for robust max absolute error.",
     )
+    parser.add_argument(
+        "--required-families",
+        type=str,
+        default="",
+        help=(
+            "Comma-separated validation families that must be present "
+            "(e.g., surrogate,piecewise,blind_forward,reverse_blind)."
+        ),
+    )
+    parser.add_argument(
+        "--min-validation-rows-per-family",
+        type=int,
+        default=0,
+        help="Minimum validation rows required for each required family.",
+    )
     args = parser.parse_args()
 
     ladder_data = load_json(args.ladder_json)
@@ -167,6 +182,7 @@ def main() -> int:
     prediction_errors = []
     prediction_error_rows = []
     prediction_errors_by_family: dict[str, list[float]] = {}
+    validation_rows_by_family: dict[str, int] = {}
     missing_validation_files = []
     for vp in args.validation_jsons:
         if not vp.exists():
@@ -174,8 +190,10 @@ def main() -> int:
             continue
         fam = validation_family(vp)
         prediction_errors_by_family.setdefault(fam, [])
+        validation_rows_by_family.setdefault(fam, 0)
         data = load_json(vp)
         validation = data.get("validation", {})
+        validation_rows_by_family[fam] += len(validation)
         for candidate, rec in validation.items():
             err = None
             if "pred_vs_midpoint_rel_error" in rec:
@@ -221,6 +239,23 @@ def main() -> int:
         "violations": [],
     }
 
+    required_families = [
+        x.strip() for x in args.required_families.split(",") if x.strip()
+    ]
+    family_coverage_check = {
+        "required_families": required_families,
+        "min_validation_rows_per_family": args.min_validation_rows_per_family,
+        "failed": False,
+        "violations": [],
+    }
+    for fam in required_families:
+        count = validation_rows_by_family.get(fam, 0)
+        if count < args.min_validation_rows_per_family:
+            family_coverage_check["failed"] = True
+            family_coverage_check["violations"].append(
+                f"family {fam} validation_rows {count} < {args.min_validation_rows_per_family}"
+            )
+
     if robust_thresholds["mae_max"] is not None and robust_error_summary["mae"] is not None:
         if robust_error_summary["mae"] > robust_thresholds["mae_max"]:
             robust_threshold_check["failed"] = True
@@ -253,9 +288,11 @@ def main() -> int:
         "interval_summary": interval_summary,
         "prediction_error_summary": error_summary,
         "prediction_error_summary_by_family": error_summary_by_family,
+        "validation_rows_by_family": validation_rows_by_family,
         "prediction_error_summary_robust": robust_error_summary,
         "robust_thresholds": robust_thresholds,
         "robust_threshold_check": robust_threshold_check,
+        "family_coverage_check": family_coverage_check,
         "prediction_error_rows": prediction_error_rows,
         "missing_validation_files": missing_validation_files,
     }
@@ -267,6 +304,8 @@ def main() -> int:
     if interval_summary["invalid_width_candidates"]:
         result["status"] = "fail"
     if robust_threshold_check["failed"]:
+        result["status"] = "fail"
+    if family_coverage_check["failed"]:
         result["status"] = "fail"
 
     args.out_json.parent.mkdir(parents=True, exist_ok=True)
@@ -298,6 +337,11 @@ def main() -> int:
     md_lines.append(f"- rmse: {error_summary['rmse']}")
     md_lines.append(f"- max_abs_error: {error_summary['max_abs_error']}")
     md_lines.append("")
+    if validation_rows_by_family:
+        md_lines.append("## Validation Coverage By Family")
+        for fam in sorted(validation_rows_by_family):
+            md_lines.append(f"- {fam}: validation_rows={validation_rows_by_family[fam]}")
+        md_lines.append("")
     if args.robust_summary:
         md_lines.append("## Prediction Error Summary By Family")
         for fam in sorted(error_summary_by_family):
@@ -322,6 +366,15 @@ def main() -> int:
         md_lines.append(f"- max_abs_error_max: {robust_thresholds['max_abs_error_max']}")
         md_lines.append(f"- failed: {robust_threshold_check['failed']}")
         md_lines.append(f"- violations: {robust_threshold_check['violations']}")
+        md_lines.append("")
+    if required_families:
+        md_lines.append("## Family Coverage Check")
+        md_lines.append(f"- required_families: {required_families}")
+        md_lines.append(
+            f"- min_validation_rows_per_family: {args.min_validation_rows_per_family}"
+        )
+        md_lines.append(f"- failed: {family_coverage_check['failed']}")
+        md_lines.append(f"- violations: {family_coverage_check['violations']}")
         md_lines.append("")
     if missing_validation_files:
         md_lines.append("## Missing Validation Files")

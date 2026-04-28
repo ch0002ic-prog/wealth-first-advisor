@@ -1,0 +1,127 @@
+{
+  "status": "pass",
+  "ladder_file": "artifacts/main5_execution_gate_tolerance_continuity_ladder_extended_2026-04-28-v4.json",
+  "entry_count": 17,
+  "global_monotonic_non_decreasing": true,
+  "branch_monotonicity": {
+    "l": {
+      "monotonic_non_decreasing": true,
+      "count": 9
+    },
+    "k": {
+      "monotonic_non_decreasing": true,
+      "count": 8
+    }
+  },
+  "interval_summary": {
+    "count_with_finite_bad_through": 11,
+    "min_width": 1.0000000000008237e-14,
+    "max_width": 1.999999999999993e-11,
+    "mean_width": 5.055454545454554e-12,
+    "invalid_width_candidates": []
+  },
+  "prediction_error_summary": {
+    "count": 6,
+    "mae": 0.10470353627836704,
+    "rmse": 0.252526358775423,
+    "max_abs_error": 0.6185410554844598
+  },
+  "prediction_error_summary_by_family": {
+    "surrogate": {
+      "count": 2,
+      "mae": 0.31111093033029613,
+      "rmse": 0.43738231882791867,
+      "max_abs_error": 0.6185410554844598
+    },
+    "piecewise": {
+      "count": 2,
+      "mae": 0.0019345341243544967,
+      "rmse": 0.002059115708439762,
+      "max_abs_error": 0.0026398958914296364
+    },
+    "blind_forward": {
+      "count": 2,
+      "mae": 0.0010651443804504633,
+      "rmse": 0.0010737077503276955,
+      "max_abs_error": 0.0012004801920768018
+    },
+    "reverse_blind": {
+      "count": 0,
+      "mae": null,
+      "rmse": null,
+      "max_abs_error": null
+    }
+  },
+  "validation_rows_by_family": {
+    "surrogate": 2,
+    "piecewise": 2,
+    "blind_forward": 2,
+    "reverse_blind": 6
+  },
+  "prediction_error_summary_robust": {
+    "count": 4,
+    "mae": 0.00149983925240248,
+    "rmse": 0.0016420727501936607,
+    "max_abs_error": 0.0026398958914296364
+  },
+  "robust_thresholds": {
+    "mae_max": 0.005,
+    "rmse_max": 0.005,
+    "max_abs_error_max": 0.005
+  },
+  "robust_threshold_check": {
+    "enabled": true,
+    "failed": false,
+    "violations": []
+  },
+  "family_coverage_check": {
+    "required_families": [
+      "surrogate",
+      "piecewise",
+      "blind_forward",
+      "reverse_blind"
+    ],
+    "min_validation_rows_per_family": 2,
+    "failed": false,
+    "violations": []
+  },
+  "prediction_error_rows": [
+    {
+      "candidate": "l_s092625474_objw1",
+      "relative_error": 0.0036808051761324867,
+      "source_file": "artifacts/main5_execution_gate_tolerance_surrogate_validation_2026-04-28.json",
+      "family": "surrogate"
+    },
+    {
+      "candidate": "k_s09262552_objw1",
+      "relative_error": 0.6185410554844598,
+      "source_file": "artifacts/main5_execution_gate_tolerance_surrogate_validation_2026-04-28.json",
+      "family": "surrogate"
+    },
+    {
+      "candidate": "l_s092625476_objw1",
+      "relative_error": -0.0026398958914296364,
+      "source_file": "artifacts/main5_execution_gate_tolerance_piecewise_validation_2026-04-28.json",
+      "family": "piecewise"
+    },
+    {
+      "candidate": "k_s09262554_objw1",
+      "relative_error": 0.0012291723572793569,
+      "source_file": "artifacts/main5_execution_gate_tolerance_piecewise_validation_2026-04-28.json",
+      "family": "piecewise"
+    },
+    {
+      "candidate": "l_s092625478_objw1",
+      "relative_error": 0.0009298085688241248,
+      "source_file": "artifacts/main5_execution_gate_tolerance_blind_forward_validation_2026-04-28.json",
+      "family": "blind_forward"
+    },
+    {
+      "candidate": "k_s09262555_objw1",
+      "relative_error": -0.0012004801920768018,
+      "source_file": "artifacts/main5_execution_gate_tolerance_blind_forward_validation_2026-04-28.json",
+      "family": "blind_forward"
+    }
+  ],
+  "missing_validation_files": []
+}

@@ -1,0 +1,63 @@
+{
+  "label": "main5_edgeband_tol1e10_deeper",
+  "input_summary": "artifacts/main5_deep_edgeband_tol1e10_deeper_summary.csv",
+  "decision_views": {
+    "economic_best_candidate": "l_s092625468_objw1",
+    "activity_first_candidate": "j_s0926258_objw1"
+  },
+  "key_comparisons": {
+    "l468_vs_q": {
+      "delta_mean_test_relative": 0.000524800994753695,
+      "delta_mean_executed_steps": 0.03125,
+      "delta_mean_gate_suppression": -6.73491379310498e-05,
+      "delta_min_case_slack": 5.972945840322392e-05
+    },
+    "l468_vs_j6254": {
+      "delta_mean_test_relative": 1.3087967376534948e-09,
+      "delta_min_case_slack": 1.876105173992393e-12,
+      "delta_mean_turnover": 7.386260778897459e-12
+    }
+  },
+  "top5_economic": [
+    {
+      "candidate": "l_s092625468_objw1",
+      "mean_test_relative": 0.0176562857770845,
+      "min_case_slack": 0.007059729458403224,
+      "activity_violations": 32,
+      "mean_executed_steps": 1.0,
+      "mean_gate_suppression": 0.9978448275862069
+    },
+    {
+      "candidate": "j_s0926254_objw1",
+      "mean_test_relative": 0.017656284468287764,
+      "min_case_slack": 0.007059729456527119,
+      "activity_violations": 32,
+      "mean_executed_steps": 1.0,
+      "mean_gate_suppression": 0.9978448275862069
+    },
+    {
+      "candidate": "j_s0926252_objw1",
+      "mean_test_relative": 0.017656280618890963,
+      "min_case_slack": 0.007059729451008512,
+      "activity_violations": 32,
+      "mean_executed_steps": 1.0,
+      "mean_gate_suppression": 0.9978448275862069
+    },
+    {
+      "candidate": "j_s0926250_objw1",
+      "mean_test_relative": 0.01765627676949011,
+      "min_case_slack": 0.0070597294454846525,
+      "activity_violations": 32,
+      "mean_executed_steps": 1.0,
+      "mean_gate_suppression": 0.9978448275862069
+    },
+    {
+      "candidate": "j_s0926248_objw1",
+      "mean_test_relative": 0.01765627292009614,
+      "min_case_slack": 0.007059729439970779,
+      "activity_violations": 32,
+      "mean_executed_steps": 1.0,
+      "mean_gate_suppression": 0.9978448275862069
+    }
+  ]
+}

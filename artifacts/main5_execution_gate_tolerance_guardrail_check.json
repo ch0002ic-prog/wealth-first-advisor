@@ -71,6 +71,20 @@
         "l_s092625468_objw1",
         "l_s092625470_objw1"
       ]
+    },
+    "lower_cliff_bad_4e11": {
+      "candidate": "l_s092625468_objw1",
+      "tolerance": "4e-11",
+      "mean_executed_steps": 1.5,
+      "mean_test_relative": 0.0109852147,
+      "regime": "bad"
+    },
+    "lower_cliff_good_5e11": {
+      "candidate": "l_s092625468_objw1",
+      "tolerance": "5e-11",
+      "mean_executed_steps": 1.0,
+      "mean_test_relative": 0.0176562858,
+      "regime": "good"
     }
   },
   "failures": []

@@ -1,0 +1,97 @@
+{
+  "investigation": "main5_tolerance_deeper_2026-04-28",
+  "tolerance_comparison": {
+    "from": 0.0,
+    "to": 1e-10,
+    "cliffcheck_candidates": {
+      "l_s092625468_objw1": {
+        "mean_test_relative_tol0": 0.01098521473071623,
+        "mean_test_relative_tol1e10": 0.0176562857770845,
+        "delta_mean_test_relative": 0.006671071046368271,
+        "mean_executed_steps_tol0": 1.5,
+        "mean_executed_steps_tol1e10": 1.0,
+        "delta_mean_executed_steps": -0.5,
+        "breach_count_tol0": 0,
+        "breach_count_tol1e10": 0
+      },
+      "l_s092625470_objw1": {
+        "mean_test_relative_tol0": 0.010985214741285831,
+        "mean_test_relative_tol1e10": 0.010985214741285831,
+        "delta_mean_test_relative": 0.0,
+        "mean_executed_steps_tol0": 1.5,
+        "mean_executed_steps_tol1e10": 1.5,
+        "delta_mean_executed_steps": 0.0,
+        "breach_count_tol0": 0,
+        "breach_count_tol1e10": 0
+      },
+      "l_s092625472_objw1": {
+        "mean_test_relative_tol0": 0.010985214751855099,
+        "mean_test_relative_tol1e10": 0.010985214751855099,
+        "delta_mean_test_relative": 0.0,
+        "mean_executed_steps_tol0": 1.5,
+        "mean_executed_steps_tol1e10": 1.5,
+        "delta_mean_executed_steps": 0.0,
+        "breach_count_tol0": 0,
+        "breach_count_tol1e10": 0
+      }
+    },
+    "expanded_panel_invariance_check": {
+      "f_s092362_objw1": {
+        "delta_mean_test_relative": 0.0,
+        "delta_mean_executed_steps": 0.0,
+        "delta_breach_count": 0
+      },
+      "h_s092624_objw1": {
+        "delta_mean_test_relative": 0.0,
+        "delta_mean_executed_steps": 0.0,
+        "delta_breach_count": 0
+      },
+      "q_s09231_h10_ntb050": {
+        "delta_mean_test_relative": 0.0,
+        "delta_mean_executed_steps": 0.0,
+        "delta_breach_count": 0
+      },
+      "z_q_objw1": {
+        "delta_mean_test_relative": 0.0,
+        "delta_mean_executed_steps": 0.0,
+        "delta_breach_count": 0
+      }
+    }
+  },
+  "coverage_and_gates": {
+    "status": "pass",
+    "validation_rows_by_family": {
+      "surrogate": 2,
+      "piecewise": 2,
+      "blind_forward": 2,
+      "reverse_blind": 6
+    },
+    "family_coverage_check": {
+      "required_families": [
+        "surrogate",
+        "piecewise",
+        "blind_forward",
+        "reverse_blind"
+      ],
+      "min_validation_rows_per_family": 2,
+      "failed": false,
+      "violations": []
+    },
+    "robust_threshold_check": {
+      "enabled": true,
+      "failed": false,
+      "violations": []
+    },
+    "robust_metrics": {
+      "count": 4,
+      "mae": 0.00149983925240248,
+      "rmse": 0.0016420727501936607,
+      "max_abs_error": 0.0026398958914296364
+    }
+  },
+  "conclusion": {
+    "tolerance_1e10_is_localized_fix": true,
+    "collateral_regression_detected_on_checked_panels": false,
+    "reverse_blind_coverage_gap_closed": true
+  }
+}
