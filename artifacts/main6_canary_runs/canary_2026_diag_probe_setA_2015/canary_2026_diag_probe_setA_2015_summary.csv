@@ -1,0 +1,9 @@
+candidate,scenario,seed,cost,mean_test_relative,robust_min_p05,dead_fold_fraction,gate_passed,breach,breach_reason,failed_gate_checks,error
+baseline_ntb005,baseline_b20_s4242,7,5,-0.004573740569913576,,0.0,False,True,robust_min_nan,robust_min_threshold,
+baseline_ntb005,altblock_b16_s4242,7,5,-0.004573740569913576,,0.0,False,True,robust_min_nan,robust_min_threshold,
+baseline_ntb005,altseed_b20_s5252,7,5,-0.004573740569913576,,0.0,False,True,robust_min_nan,robust_min_threshold,
+baseline_ntb005,deepcheck_b12_s8080,7,5,-0.004573740569913576,,0.0,False,True,robust_min_nan,robust_min_threshold,
+objw05_ntb005,baseline_b20_s4242,7,5,0.0,0.0,0.0,False,True,gate_fail:active_fraction_threshold|validation_threshold,active_fraction_threshold|validation_threshold,
+objw05_ntb005,altblock_b16_s4242,7,5,0.0,0.0,0.0,False,True,gate_fail:active_fraction_threshold|validation_threshold,active_fraction_threshold|validation_threshold,
+objw05_ntb005,altseed_b20_s5252,7,5,-0.00011793790922414172,-0.0018440812908210923,0.0,True,False,,,
+objw05_ntb005,deepcheck_b12_s8080,7,5,0.0,0.0,0.0,False,True,gate_fail:active_fraction_threshold|validation_threshold,active_fraction_threshold|validation_threshold,

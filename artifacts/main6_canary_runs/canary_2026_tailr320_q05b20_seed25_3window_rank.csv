@@ -1,0 +1,4 @@
+candidate,strict3_pass,relaxed3_pass,sum_delta_mean,sum_delta_robust
+objw05_ntb005_floor_t15_p3,False,False,0.0,0.0
+objw05_ntb005_floor_t15_p3_tailr320,False,False,-6.0455796728057555e-06,0.0013875187826468999
+objw05_ntb005_floor_t15_p3_tailr320_q05_b20,False,False,-6.0455796728057555e-06,0.0013875187826468999

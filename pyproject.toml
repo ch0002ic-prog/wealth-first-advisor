@@ -30,6 +30,7 @@ wealth-first-tv-bridge = "wealth_first.tradingview_bridge:main"
 wealth-first-train-ppo = "wealth_first.train_ppo:main"
 wealth-first-main3 = "wealth_first.main3:main"
 wealth-first-main3-structural-diagnosis = "wealth_first.main3_structural_diagnosis:main"
+wealth-first-main6 = "wealth_first.main6:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
